@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Data (too large, licensing)
+data/*.csv
+data/*.zip
+!data/.gitkeep
+
+# Models (regeneratable)
+models/*.joblib
+models/*.pkl
+!models/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Reports (optional - decide later)
+reports/*.csv
