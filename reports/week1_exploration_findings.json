@@ -1,0 +1,61 @@
+{
+  "exploration_date": "2026-05-04",
+  "dataset": "PhiUSIIL Phishing URL Dataset",
+  "total_rows": 235795,
+  "total_columns_in_source": 56,
+  "columns_used": [
+    "URL",
+    "label"
+  ],
+  "label_encoding": {
+    "0": "phishing",
+    "1": "legitimate"
+  },
+  "class_distribution": {
+    "phishing_count": 100945,
+    "legitimate_count": 134850,
+    "phishing_pct": 42.81,
+    "legitimate_pct": 57.19
+  },
+  "duplicates": 425,
+  "url_length_stats": {
+    "phishing_mean": 46.24,
+    "phishing_max": 6097,
+    "legitimate_mean": 27.23,
+    "legitimate_max": 58
+  },
+  "https_adoption": {
+    "phishing_pct": 48.74,
+    "legitimate_pct": 100.0
+  },
+  "char_ratios": {
+    "phishing": {
+      "digit_ratio": 0.0636,
+      "alpha_ratio": 0.7472
+    },
+    "legitimate": {
+      "digit_ratio": 0.002,
+      "alpha_ratio": 0.8
+    }
+  },
+  "subdomain_patterns": {
+    "phishing_zero_subdomain_pct": 15.51,
+    "legitimate_zero_subdomain_pct": 0.02,
+    "phishing_max_subdomains": 10,
+    "legitimate_max_subdomains": 4
+  },
+  "high_risk_tlds_100pct_phishing": [
+    "cf",
+    "ml",
+    "gq",
+    "icu",
+    "page",
+    "cfd"
+  ],
+  "limitations_documented": [
+    "Legitimate URLs are homepage-only (max 58 chars)",
+    "100% legitimate use HTTPS (real-world ~95-97%)",
+    "Several TLDs show 100% phishing concentration (collection bias)",
+    "Mitigation: hybrid architecture + PhishTank holdout + external TLD risk data"
+  ]
+}
