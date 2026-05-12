@@ -421,11 +421,12 @@ TLD_RISK_SCORES = {
     # Mid-risk (50-90%)
     'ru': 0.77, 'su': 0.75, 'pw': 0.70, 'work': 0.65,
     'click': 0.65, 'download': 0.65, 'review': 0.60,
+    'club': 0.88, 'cn': 0.85,
     # Mixed (40-60%)
-    'com': 0.40, 'net': 0.43, 'co': 0.45, 'io': 0.50,
+    'com': 0.40, 'net': 0.43, 'co': 0.45, 'io': 0.91,
     # Low risk (<20%)
     'org': 0.12, 'info': 0.20, 'biz': 0.25,
-    'me': 0.15, 'tv': 0.15,
+    'me': 0.79, 'tv': 0.15,
     # Country-code TLDs (mostly legitimate)
     'uk': 0.05, 'de': 0.05, 'fr': 0.05, 'it': 0.05,
     'nl': 0.05, 'es': 0.05, 'ca': 0.05, 'au': 0.05,
