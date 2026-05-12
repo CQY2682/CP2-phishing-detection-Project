@@ -282,6 +282,191 @@ def brand_in_path_not_domain(url: str) -> int:
     except Exception:
         return 0
 
+# ============================================================
+# GROUP 4: SUPER FEATURES (21-24) — Advanced detection
+# ============================================================
+# Complex features mapped to MITRE ATT&CK techniques.
+# These are the CP2 "innovation" — beyond standard ML features.
+
+
+from urllib.parse import unquote
+
+
+def recursive_decode_depth(url: str, max_iterations: int = 10) -> int:
+    """
+    Feature #21: How many URL-decode iterations until the string stabilizes.
+    
+    Predictive signal: STRONG (when > 1)
+    MITRE ATT&CK: T1027.001 (Obfuscated Files or Information: Binary Padding)
+    
+    Detects multi-layer URL encoding used to evade pattern-matching filters.
+    Phishing example: a URL might be encoded 2-3 times to hide payload.
+    
+    Algorithm:
+        1. Decode the URL once.
+        2. Compare with original.
+        3. If different, repeat.
+        4. If same, return iteration count.
+    
+    Interpretation:
+        0  -> No encoding present (plain URL)
+        1  -> Standard single-level encoding (normal, common)
+        2+ -> Multi-layer obfuscation (suspicious)
+        3+ -> Very suspicious (intentional evasion)
+    
+    Safety:
+        - Capped at max_iterations to prevent infinite loops
+        - Handles malformed encoding gracefully
+    """
+    if not url:
+        return 0
+    
+    current = url
+    depth = 0
+    
+    try:
+        for _ in range(max_iterations):
+            decoded = unquote(current)
+            if decoded == current:
+                # No more decoding possible — stable
+                break
+            current = decoded
+            depth += 1
+        return depth
+    except Exception:
+        return 0
+# New advanced helpers (IDN / typosquat)
+
+import Levenshtein
+
+
+# Top brands for typosquat detection (extend as needed)
+TOP_BRANDS = [
+    'paypal', 'apple', 'amazon', 'microsoft', 'google',
+    'facebook', 'instagram', 'netflix', 'ebay', 'linkedin',
+    'twitter', 'whatsapp', 'youtube', 'wikipedia', 'reddit',
+    'wellsfargo', 'chase', 'bankofamerica', 'citi', 'hsbc',
+    'maybank', 'cimb', 'publicbank', 'rhb', 'ambank',
+    'office365', 'outlook', 'gmail', 'yahoo', 'dropbox',
+    'adobe', 'github', 'spotify', 'steam', 'discord',
+    'tiktok', 'snapchat', 'pinterest', 'tumblr', 'twitch',
+    'paypal', 'venmo', 'cashapp', 'zelle', 'stripe',
+    'shopify', 'walmart', 'target', 'bestbuy', 'costco',
+    'fedex', 'ups', 'usps', 'dhl', 'amazon',
+    'icloud', 'onedrive', 'googledrive', 'mega', 'box',
+    'zoom', 'teams', 'slack', 'webex', 'meet',
+    'lazada', 'shopee', 'grab', 'foodpanda', 'tngdigital',
+    'maxis', 'celcom', 'digi', 'unifi', 'astro',
+    'sunway', 'taylors', 'monash', 'inti', 'help',
+    'binance', 'coinbase', 'kraken', 'bybit', 'okx'
+]
+
+
+def idn_homograph_flag(url: str) -> int:
+    """
+    Feature #22: Punycode/IDN homograph attack detection.
+    MITRE ATT&CK: T1036.007 (Masquerading: Double File Extension)
+    
+    Returns 1 if any domain part contains 'xn--' (Punycode prefix).
+    Punycode encodes Unicode chars that look like Latin but aren't.
+    """
+    try:
+        netloc = urlparse(url).netloc.lower().split(':')[0]
+        if 'xn--' in netloc:
+            return 1
+        return 0
+    except Exception:
+        return 0
+
+
+def levenshtein_min(url: str) -> int:
+    """
+    Feature #23: Minimum edit distance from domain to known brands.
+    MITRE ATT&CK: T1566.002 (Spearphishing Link: Typosquatting)
+    
+    Returns smallest Levenshtein distance between the registered domain
+    and any brand in TOP_BRANDS list.
+    """
+    try:
+        netloc = urlparse(url).netloc.lower().split(':')[0]
+        if netloc.startswith('www.'):
+            netloc = netloc[4:]
+        # Get registered domain part (before TLD)
+        parts = netloc.split('.')
+        if len(parts) >= 2:
+            domain = parts[-2]
+        else:
+            domain = netloc
+        
+        if not domain:
+            return 99  # sentinel for invalid
+        
+        # Compute min distance across all brands
+        min_dist = min(Levenshtein.distance(domain, brand) for brand in TOP_BRANDS)
+        return min_dist
+    except Exception:
+        return 99
+
+# TLD risk scores: 1.0 = high phishing concentration, 0.0 = legitimate
+# Built from Week 1 PhiUSIIL exploration + Spamhaus DBL reference
+TLD_RISK_SCORES = {
+    # 100% phishing in PhiUSIIL (max risk)
+    'cf': 1.0, 'ml': 1.0, 'gq': 1.0, 'cfd': 1.0,
+    'icu': 1.0, 'page': 1.0,
+    # 95-99% phishing
+    'top': 0.99, 'site': 0.99, 'ga': 0.99, 'link': 0.99,
+    'gd': 0.99, 'fun': 0.98, 'dev': 0.98, 'xyz': 0.98,
+    'tk': 0.98, 'ly': 0.98, 'app': 0.97, 'cloud': 0.97,
+    'my.id': 0.97,
+    # Mid-risk (50-90%)
+    'ru': 0.77, 'su': 0.75, 'pw': 0.70, 'work': 0.65,
+    'click': 0.65, 'download': 0.65, 'review': 0.60,
+    # Mixed (40-60%)
+    'com': 0.40, 'net': 0.43, 'co': 0.45, 'io': 0.50,
+    # Low risk (<20%)
+    'org': 0.12, 'info': 0.20, 'biz': 0.25,
+    'me': 0.15, 'tv': 0.15,
+    # Country-code TLDs (mostly legitimate)
+    'uk': 0.05, 'de': 0.05, 'fr': 0.05, 'it': 0.05,
+    'nl': 0.05, 'es': 0.05, 'ca': 0.05, 'au': 0.05,
+    'jp': 0.05, 'kr': 0.05, 'br': 0.05, 'mx': 0.05,
+    'my': 0.05, 'sg': 0.05, 'th': 0.05, 'id': 0.05,
+    # Trusted (essentially never phishing)
+    'edu': 0.0, 'gov': 0.0, 'mil': 0.0,
+    'co.uk': 0.0, 'com.au': 0.0, 'com.my': 0.0,
+    'org.uk': 0.0, 'com.br': 0.0, 'co.jp': 0.0,
+}
+
+DEFAULT_TLD_RISK = 0.5  # unknown TLD = neutral
+
+
+def tld_risk_score(url: str) -> float:
+    """
+    Feature #24: Risk score for URL's TLD based on phishing concentration.
+    MITRE ATT&CK: T1583.001 (Acquire Infrastructure: Domains)
+    
+    Maps TLD to risk score (0.0-1.0):
+        1.0 = TLD with 100% phishing in training data (.cf, .ml, .gq)
+        0.5 = unknown TLD (neutral default)
+        0.0 = trusted TLD (.edu, .gov, .gov.uk)
+    """
+    try:
+        netloc = urlparse(url).netloc.lower().split(':')[0]
+        parts = netloc.split('.')
+        if len(parts) < 2:
+            return DEFAULT_TLD_RISK
+        
+        # Try compound TLD first (co.uk, com.my)
+        if len(parts) >= 3:
+            compound_tld = '.'.join(parts[-2:])
+            if compound_tld in TLD_RISK_SCORES:
+                return TLD_RISK_SCORES[compound_tld]
+        
+        # Fallback to single TLD
+        tld = parts[-1]
+        return TLD_RISK_SCORES.get(tld, DEFAULT_TLD_RISK)
+    except Exception:
+        return DEFAULT_TLD_RISK
 
 # ============================================================
 # MASTER EXTRACTOR
@@ -298,7 +483,11 @@ FEATURE_NAMES = [
     # Group 3: Content (16-20)
     'has_https', 'has_shortener', 'has_login_keyword',
     'is_ip', 'brand_in_path_not_domain',
-    # Group 4: Super features (21-24) — pending
+    # Group 4: Super (21-24)
+    'recursive_decode_depth',
+    'idn_homograph_flag',
+    'levenshtein_min',
+    'tld_risk_score',
 ]
 
 
@@ -343,6 +532,11 @@ def extract_features(url: str) -> Dict[str, float]:
         'has_login_keyword': has_login_keyword(url),
         'is_ip': is_ip(url),
         'brand_in_path_not_domain': brand_in_path_not_domain(url),
+        # Group 4: Super
+        'recursive_decode_depth': recursive_decode_depth(url),
+        'idn_homograph_flag': idn_homograph_flag(url),
+        'levenshtein_min': levenshtein_min(url),
+        'tld_risk_score': tld_risk_score(url),
     }
 
 
@@ -358,6 +552,14 @@ if __name__ == "__main__":
         ("https://docs.python.org/3/library/urllib.parse.html", "legitimate, long path"),
         ("https://bit.ly/3xK9pQz", "URL shortener (should flag)"),
         ("https://evil.com/paypal/login/verify", "brand spoofing in path"),
+        ("https://evil.com/login", "plain URL (depth=0)"),
+        ("https://evil.com%2Flogin", "single-encoded (depth=1)"),
+        ("https://evil.com%252Flogin", "double-encoded (depth=2, suspicious)"),
+        ("https://evil.com%25252Flogin", "triple-encoded (depth=3, very suspicious)"),
+        ("https://xn--pypal-4ve.com/login", "IDN homograph (Cyrillic spoof)"),
+        ("https://paypa1.com/login", "typosquat distance=1"),
+        ("https://g00gle.com", "typosquat distance=2"),
+        ("https://paypal.com", "legitimate brand (distance=0)"),
     ]
 
     print("=" * 70)
