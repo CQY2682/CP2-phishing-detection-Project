@@ -1,0 +1,70 @@
+{
+  "training_date": "2026-05-13",
+  "xgboost": {
+    "accuracy": 0.998024387135149,
+    "precision": 0.9997003446037057,
+    "recall": 0.9956725029844807,
+    "f1": 0.9976823585117253,
+    "roc_auc": 0.9987816653365421,
+    "train_time_seconds": 0.9,
+    "hyperparameters": {
+      "n_estimators": 300,
+      "max_depth": 8,
+      "learning_rate": 0.1,
+      "n_jobs": -1,
+      "random_state": 42,
+      "eval_metric": "logloss",
+      "tree_method": "hist"
+    }
+  },
+  "random_forest": {
+    "accuracy": 0.9978119556443047,
+    "precision": 0.9998500524816314,
+    "recall": 0.9950258654994031,
+    "f1": 0.9974321258507641,
+    "roc_auc": 0.9991724963818105,
+    "train_time_seconds": 3.85,
+    "hyperparameters": {
+      "n_estimators": 300,
+      "max_depth": 20,
+      "n_jobs": -1,
+      "random_state": 42,
+      "class_weight": "balanced"
+    }
+  },
+  "ensemble_weights": {
+    "xgboost_weight": 0.5001,
+    "rf_weight": 0.4999,
+    "justification": "Weights proportional to F1 scores (CP1 promise)"
+  },
+  "data_splits": {
+    "train_size": 188410,
+    "test_size": 47074,
+    "features": [
+      "url_length",
+      "qty_dot",
+      "qty_hyphen",
+      "qty_slash",
+      "qty_at",
+      "qty_question",
+      "qty_equal",
+      "qty_percent",
+      "domain_length",
+      "tld_length",
+      "url_entropy",
+      "domain_entropy",
+      "digit_ratio",
+      "alpha_ratio",
+      "char_continuation_rate",
+      "has_https",
+      "has_shortener",
+      "has_login_keyword",
+      "is_ip",
+      "brand_in_path_not_domain",
+      "recursive_decode_depth",
+      "idn_homograph_flag",
+      "levenshtein_min",
+      "tld_risk_score"
+    ]
+  }
+}
