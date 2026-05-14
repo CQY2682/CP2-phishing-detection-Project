@@ -167,6 +167,18 @@ REAL_LEGIT_URLS = [
     "https://www.amazon.com/s?k=python+programming&i=stripbooks&rh=n:283155",
     "https://www.booking.com/searchresults.html?ss=Kuala+Lumpur&checkin=2024-03-01",
     "https://www.google.com/maps/search/restaurants+near+me/@3.1390,101.6869,14z",
+
+    # Malaysian banking login pages (critical for local context)
+    "https://www.maybank2u.com.my/maybank2u/malaysia/login",
+    "https://www.maybank2u.com.my/home.do",
+    "https://www.cimbclicks.com.my/clicks/entreLogin.do",
+    "https://www.rhbonlinebanking.com.my/retailing/login.do",
+    "https://www.pbebank.com/Personal-Banking.aspx",
+    "https://ibanking.hlb.com.my/hlb/",
+    "https://www.ambank.com.my/eng/personal-banking.html",
+    "https://www.myeg.com.my/",
+    "https://mytax.hasil.gov.my/",
+    "https://www.bnm.gov.my/",
 ]
 
 def main():

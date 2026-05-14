@@ -2,11 +2,11 @@
   "training_date": "2026-05-13",
   "xgboost": {
     "accuracy": 0.998024387135149,
-    "precision": 0.9997003446037057,
-    "recall": 0.9956725029844807,
-    "f1": 0.9976823585117253,
-    "roc_auc": 0.9987816653365421,
-    "train_time_seconds": 0.9,
+    "precision": 0.9996504369538077,
+    "recall": 0.9957222443294866,
+    "f1": 0.9976824740212814,
+    "roc_auc": 0.9987581760606803,
+    "train_time_seconds": 0.6,
     "hyperparameters": {
       "n_estimators": 300,
       "max_depth": 8,
@@ -18,12 +18,12 @@
     }
   },
   "random_forest": {
-    "accuracy": 0.9978119556443047,
-    "precision": 0.9998500524816314,
-    "recall": 0.9950258654994031,
-    "f1": 0.9974321258507641,
-    "roc_auc": 0.9991724963818105,
-    "train_time_seconds": 3.85,
+    "accuracy": 0.9978544419424735,
+    "precision": 0.9997501623944436,
+    "recall": 0.9952248308794269,
+    "f1": 0.9974823640850512,
+    "roc_auc": 0.9990663501590026,
+    "train_time_seconds": 3.88,
     "hyperparameters": {
       "n_estimators": 300,
       "max_depth": 20,
@@ -38,7 +38,7 @@
     "justification": "Weights proportional to F1 scores (CP1 promise)"
   },
   "data_splits": {
-    "train_size": 188410,
+    "train_size": 188420,
     "test_size": 47074,
     "features": [
       "url_length",
