@@ -29,13 +29,10 @@ from sklearn.metrics import (
     confusion_matrix, roc_curve, classification_report,
     ConfusionMatrixDisplay
 )
-from sklearn.metrics import RocCurveDisplay
 from statsmodels.stats.contingency_tables import mcnemar
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from feature_extractor import extract_features, FEATURE_NAMES
-from heuristic_engine import heuristic_check
-from hybrid_scorer import hybrid_predict
+from feature_extractor import FEATURE_NAMES
 
 # ── Constants ──────────────────────────────────────────────
 W_XGB = 0.5001

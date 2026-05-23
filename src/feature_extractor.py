@@ -61,7 +61,11 @@ LOGIN_KEYWORDS = {
     'update', 'reset', 'password', 'unlock',
     # Common targets
     'paypal', 'amazon', 'apple', 'microsoft', 'office365',
-    'google', 'facebook', 'instagram', 'netflix'
+    'google', 'facebook', 'instagram', 'netflix',
+    # Malay-language phishing lures (local contribution)
+    'selamat', 'akaun', 'perbankan', 'pengesahan', 'kemaskini',
+    'kata', 'laluan', 'masuk', 'semak', 'sahkan',
+    'tuntutan', 'hadiah', 'wang', 'bayaran', 'kredit'
 }
 
 SPOOFED_BRANDS = {
