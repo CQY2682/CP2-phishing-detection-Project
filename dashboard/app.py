@@ -403,7 +403,7 @@ If rules say suspicious but AI says safe, the system escalates — AI alone can 
 
         st.markdown("**2026 Active Threats**")
         st.markdown("""
-Your system detects these current attack types:
+This system detects these current attack types:
 
 🔴 **Starkiller AiTM Kit**
 Successor to Tycoon 2FA (taken down Jan 2026). Intercepts login AND 2FA codes simultaneously.
@@ -672,15 +672,15 @@ def batch_analysis(xgb_model, rf_model, explainer):
             urls = df_input['url'].dropna().tolist()
         else:
             content = uploaded.read().decode('utf-8', errors='ignore')
-            urls = [u.strip() for u in content.splitlines() if u.strip().startswith('http')]
+            urls = [u.strip() for u in content.splitlines() 
+                    if u.strip() and (u.strip().startswith('http') or u.strip().startswith('ftp'))]
     except Exception as e:
         st.error(f"Error reading file: {e}")
         return
 
-    if not urls:
-        st.warning("No valid URLs found in file.")
+    if len(urls) == 0:
+        st.warning("No valid URLs found. Make sure file contains one URL per line starting with http:// or https://")
         return
-
     st.info(f"Found {len(urls):,} URLs. Starting scan...")
 
     # Scan with progress bar
@@ -725,8 +725,9 @@ def batch_analysis(xgb_model, rf_model, explainer):
     verdict_counts = df_results['Verdict'].value_counts()
     cols = st.columns(5)
     for i, (v, c) in enumerate(verdict_counts.items()):
-        color = {'CRITICAL':'#ff5252','HIGH':'#ff9800','MEDIUM':'#ffeb3b',
-                 'LOW':'#69f0ae','SAFE':'#00e676','ERROR':'#aaa'}.get(v, '#aaa')
+        color_map = {'CRITICAL':'#ff5252','HIGH':'#ff9800','MEDIUM':'#ffeb3b',
+                     'LOW':'#69f0ae','SAFE':'#00e676','ERROR':'#aaa'}
+        color = color_map.get(str(v), '#aaa')
         with cols[min(i, 4)]:
             st.markdown(f'<div style="text-align:center; color:{color}; font-size:24px; font-weight:bold">{c}</div>'
                         f'<div style="text-align:center; font-size:12px; color:#aaa">{v}</div>',

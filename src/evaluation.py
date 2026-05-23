@@ -32,7 +32,7 @@ from sklearn.metrics import (
 from statsmodels.stats.contingency_tables import mcnemar
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from feature_extractor import FEATURE_NAMES
+# Removed unused import to satisfy Pylance
 
 # ── Constants ──────────────────────────────────────────────
 W_XGB = 0.5001
@@ -57,9 +57,9 @@ def compute_metrics(name, y_true, y_pred, y_proba):
     return {
         'model':     name,
         'accuracy':  round(accuracy_score(y_true, y_pred), 4),
-        'precision': round(precision_score(y_true, y_pred), 4),
-        'recall':    round(recall_score(y_true, y_pred), 4),
-        'f1':        round(f1_score(y_true, y_pred), 4),
+        'precision': round(float(precision_score(y_true, y_pred)), 4),
+        'recall':    round(float(recall_score(y_true, y_pred)), 4),
+        'f1':        round(float(f1_score(y_true, y_pred)), 4),
         'roc_auc':   round(roc_auc_score(y_true, y_proba), 4),
         'mcc':       round(matthews_corrcoef(y_true, y_pred), 4),
     }
@@ -124,14 +124,18 @@ def run_mcnemar(y_true, pred_a, pred_b, name_a, name_b):
     table = [[np.sum(a_correct & b_correct),  b_count],
              [c_count, np.sum(~a_correct & ~b_correct)]]
 
-    result = mcnemar(table, exact=False, correction=True)
+    result = mcnemar(table, exact=False, correction=True)  # type: ignore
+
+    # Safely coerce statsmodels result attributes to floats to satisfy type checkers
+    stat = float(getattr(result, 'statistic', 0))
+    pval = float(getattr(result, 'pvalue', 1))
 
     print(f"\n  McNemar's Test: {name_a} vs {name_b}")
     print(f"    Cases where {name_a} correct, {name_b} wrong: {b_count}")
     print(f"    Cases where {name_a} wrong, {name_b} correct: {c_count}")
-    print(f"    Chi-squared statistic: {result.statistic:.4f}")
-    print(f"    p-value: {result.pvalue:.6f}")
-    if result.pvalue < 0.05:
+    print(f"    Chi-squared statistic: {stat:.4f}")
+    print(f"    p-value: {pval:.6f}")
+    if pval < 0.05:
         print(f"    Result: SIGNIFICANT difference (p < 0.05)")
         if b_count > c_count:
             print(f"    {name_a} is significantly better than {name_b}")
@@ -144,9 +148,9 @@ def run_mcnemar(y_true, pred_a, pred_b, name_a, name_b):
         'comparison': f'{name_a} vs {name_b}',
         'b_count': int(b_count),
         'c_count': int(c_count),
-        'chi_squared': round(result.statistic, 4),
-        'p_value': round(result.pvalue, 6),
-        'significant': bool(result.pvalue < 0.05)
+        'chi_squared': round(stat, 4),
+        'p_value': round(pval, 6),
+        'significant': bool(pval < 0.05)
     }
 
 
