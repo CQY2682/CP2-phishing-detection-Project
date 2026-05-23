@@ -1,0 +1,89 @@
+{
+  "metrics": [
+    {
+      "model": "XGBoost",
+      "accuracy": 0.998,
+      "precision": 0.9997,
+      "recall": 0.9957,
+      "f1": 0.9977,
+      "roc_auc": 0.9988,
+      "mcc": 0.996
+    },
+    {
+      "model": "Random Forest",
+      "accuracy": 0.9979,
+      "precision": 0.9998,
+      "recall": 0.9952,
+      "f1": 0.9975,
+      "roc_auc": 0.9991,
+      "mcc": 0.9956
+    },
+    {
+      "model": "Hybrid Ensemble",
+      "accuracy": 0.998,
+      "precision": 0.9998,
+      "recall": 0.9955,
+      "f1": 0.9976,
+      "roc_auc": 0.999,
+      "mcc": 0.9959
+    }
+  ],
+  "mcnemar_tests": [
+    {
+      "comparison": "Hybrid vs XGBoost",
+      "b_count": 3,
+      "c_count": 5,
+      "chi_squared": 0.125,
+      "p_value": 0.723674,
+      "significant": false
+    },
+    {
+      "comparison": "Hybrid vs Random Forest",
+      "b_count": 11,
+      "c_count": 5,
+      "chi_squared": 1.5625,
+      "p_value": 0.2113,
+      "significant": false
+    },
+    {
+      "comparison": "XGBoost vs Random Forest",
+      "b_count": 16,
+      "c_count": 8,
+      "chi_squared": 2.0417,
+      "p_value": 0.153042,
+      "significant": false
+    }
+  ],
+  "confusion_matrices": {
+    "xgboost": [
+      [
+        26963,
+        7
+      ],
+      [
+        86,
+        20018
+      ]
+    ],
+    "rf": [
+      [
+        26965,
+        5
+      ],
+      [
+        96,
+        20008
+      ]
+    ],
+    "hybrid": [
+      [
+        26965,
+        5
+      ],
+      [
+        90,
+        20014
+      ]
+    ]
+  }
+}
