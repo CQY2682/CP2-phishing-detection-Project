@@ -84,23 +84,58 @@ def plot_confusion_matrix(name, y_true, y_pred, filename):
 
 # ── ROC curve figure ───────────────────────────────────────
 def plot_roc_curves(y_true, probas_dict):
-    fig, ax = plt.subplots(figsize=(7, 6))
-    colors = {'XGBoost': '#1F4E79', 'Random Forest': '#2E75B6', 'Hybrid Ensemble': '#C00000'}
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    fig.patch.set_facecolor('#0e1117')
 
-    for name, proba in probas_dict.items():
-        fpr, tpr, _ = roc_curve(y_true, proba)
-        auc = roc_auc_score(y_true, proba)
-        ax.plot(fpr, tpr, label=f'{name} (AUC = {auc:.4f})', color=colors[name], linewidth=2)
+    colors = {'XGBoost':'#1F4E79','Random Forest':'#2E75B6','Hybrid Ensemble':'#C00000'}
+    styles = {'XGBoost':'-','Random Forest':'--','Hybrid Ensemble':'-.'}
+    widths = {'XGBoost':3,'Random Forest':3,'Hybrid Ensemble':2.5}
 
-    ax.plot([0,1],[0,1],'k--', linewidth=1, alpha=0.5, label='Random Classifier')
-    ax.set_xlabel('False Positive Rate', fontsize=12)
-    ax.set_ylabel('True Positive Rate', fontsize=12)
-    ax.set_title('ROC Curves — XGBoost vs Random Forest vs Hybrid', fontsize=13)
-    ax.legend(loc='lower right', fontsize=11)
-    ax.grid(True, alpha=0.3)
+    def draw_roc(ax, xlim, ylim, title, subtitle):
+        ax.set_facecolor('#0e1117')
+        for spine in ax.spines.values():
+            spine.set_color('#444')
+        ax.tick_params(colors='#aaa', labelsize=10)
+        ax.set_xlabel('False Positive Rate', fontsize=11, color='#ccc', labelpad=8)
+        ax.set_ylabel('True Positive Rate', fontsize=11, color='#ccc', labelpad=8)
+        ax.set_title(title, fontsize=12, color='white', pad=16)
+        ax.text(0.5, 1.01, subtitle, transform=ax.transAxes,
+                fontsize=10, color='#888', ha='center', va='bottom')
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+        ax.grid(True, alpha=0.2, color='#555', linewidth=0.8)
+
+        for name, proba in probas_dict.items():
+            fpr, tpr, _ = roc_curve(y_true, proba)
+            auc = roc_auc_score(y_true, proba)
+            ax.plot(fpr, tpr,
+                    linestyle=styles[name],
+                    linewidth=widths[name],
+                    color=colors[name],
+                    label=f'{name}  (AUC = {auc:.4f})')
+
+        if xlim == (0, 1):
+            ax.plot([0,1],[0,1],'--', linewidth=1,
+                    color='#666', alpha=0.6, label='Random classifier')
+
+        legend = ax.legend(loc='lower right', fontsize=10,
+                           framealpha=0.3, edgecolor='#555',
+                           fancybox=False, labelcolor='white')
+
+    draw_roc(axes[0], (0, 1), (0, 1.005),
+             'ROC curves — full view',
+             'All models converge near the top-left corner')
+
+    draw_roc(axes[1], (0, 0.01), (0.990, 1.001),
+             'ROC curves — zoomed (FPR 0–1%)',
+             'Separation between models at low false positive rates')
+
+    fig.suptitle('XGBoost vs Random Forest vs Hybrid Ensemble',
+                 fontsize=14, color='white', y=1.02)
+
     plt.tight_layout()
     path = os.path.join(FIGURES_DIR, 'roc_curves.png')
-    plt.savefig(path, dpi=150, bbox_inches='tight')
+    plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='#0e1117')
     plt.close()
     print(f"  Saved: {path}")
 
