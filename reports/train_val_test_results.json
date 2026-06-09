@@ -1,0 +1,67 @@
+{
+  "split_sizes": {
+    "train": 150736,
+    "validation": 37684,
+    "test": 47074,
+    "train_pct": 64.0,
+    "val_pct": 16.0,
+    "test_pct": 20.0
+  },
+  "xgboost": [
+    {
+      "split": "Training",
+      "accuracy": 0.9985,
+      "precision": 1.0,
+      "recall": 0.9965,
+      "f1": 0.9982,
+      "roc_auc": 0.9999
+    },
+    {
+      "split": "Validation",
+      "accuracy": 0.9972,
+      "precision": 0.9986,
+      "recall": 0.995,
+      "f1": 0.9968,
+      "roc_auc": 0.9988
+    },
+    {
+      "split": "Test",
+      "accuracy": 0.9979,
+      "precision": 0.9995,
+      "recall": 0.9957,
+      "f1": 0.9976,
+      "roc_auc": 0.9988
+    }
+  ],
+  "random_forest": [
+    {
+      "split": "Training",
+      "accuracy": 0.9985,
+      "precision": 1.0,
+      "recall": 0.9964,
+      "f1": 0.9982,
+      "roc_auc": 0.9998
+    },
+    {
+      "split": "Validation",
+      "accuracy": 0.9972,
+      "precision": 0.9986,
+      "recall": 0.9948,
+      "f1": 0.9967,
+      "roc_auc": 0.9986
+    },
+    {
+      "split": "Test",
+      "accuracy": 0.9978,
+      "precision": 0.9998,
+      "recall": 0.995,
+      "f1": 0.9974,
+      "roc_auc": 0.9991
+    }
+  ],
+  "overfitting_analysis": {
+    "xgboost_train_val_gap": 0.0014,
+    "rf_train_val_gap": 0.0015,
+    "conclusion": "No overfitting"
+  }
+}
