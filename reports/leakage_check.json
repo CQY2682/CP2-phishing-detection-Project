@@ -1,0 +1,14 @@
+{
+  "train_rows": 188296,
+  "test_rows": 47074,
+  "distinct_train_vectors": 113857,
+  "distinct_test_vectors": 34728,
+  "leaked_test_rows": 23420,
+  "leaked_test_pct": 49.8,
+  "train_duplicate_rows": 74439,
+  "train_duplicate_pct": 39.5,
+  "test_duplicate_rows": 12346,
+  "test_duplicate_pct": 26.2,
+  "train_phishing_ratio": 0.4271,
+  "test_phishing_ratio": 0.4271
+}
