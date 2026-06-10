@@ -30,6 +30,9 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay
 )
 from statsmodels.stats.contingency_tables import mcnemar
+from sklearn.dummy import DummyClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Removed unused import to satisfy Pylance
@@ -84,57 +87,98 @@ def plot_confusion_matrix(name, y_true, y_pred, filename):
 
 # ── ROC curve figure ───────────────────────────────────────
 def plot_roc_curves(y_true, probas_dict):
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
     fig.patch.set_facecolor('#0e1117')
 
-    colors = {'XGBoost':'#1F4E79','Random Forest':'#2E75B6','Hybrid Ensemble':'#C00000'}
-    styles = {'XGBoost':'-','Random Forest':'--','Hybrid Ensemble':'-.'}
-    widths = {'XGBoost':3,'Random Forest':3,'Hybrid Ensemble':2.5}
+    colors = {'XGBoost': '#1F4E79', 'Random Forest': '#2E75B6', 'Hybrid Ensemble': '#C00000'}
+    styles = {'XGBoost': '-', 'Random Forest': '--', 'Hybrid Ensemble': '-.'}
+    widths = {'XGBoost': 3, 'Random Forest': 3, 'Hybrid Ensemble': 2.5}
 
-    def draw_roc(ax, xlim, ylim, title, subtitle):
-        ax.set_facecolor('#0e1117')
-        for spine in ax.spines.values():
-            spine.set_color('#444')
-        ax.tick_params(colors='#aaa', labelsize=10)
-        ax.set_xlabel('False Positive Rate', fontsize=11, color='#ccc', labelpad=8)
-        ax.set_ylabel('True Positive Rate', fontsize=11, color='#ccc', labelpad=8)
-        ax.set_title(title, fontsize=12, color='white', pad=16)
-        ax.text(0.5, 1.01, subtitle, transform=ax.transAxes,
-                fontsize=10, color='#888', ha='center', va='bottom')
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
-        ax.grid(True, alpha=0.2, color='#555', linewidth=0.8)
+    ax.set_facecolor('#0e1117')
+    for spine in ax.spines.values():
+        spine.set_color('#444')
+    ax.tick_params(colors='#aaa', labelsize=10)
+    ax.set_xlabel('False Positive Rate', fontsize=11, color='#ccc', labelpad=8)
+    ax.set_ylabel('True Positive Rate', fontsize=11, color='#ccc', labelpad=8)
+    ax.set_title('ROC curves — zoomed (FPR 0–1%)', fontsize=13, color='white', pad=16)
 
-        for name, proba in probas_dict.items():
-            fpr, tpr, _ = roc_curve(y_true, proba)
-            auc = roc_auc_score(y_true, proba)
-            ax.plot(fpr, tpr,
-                    linestyle=styles[name],
-                    linewidth=widths[name],
-                    color=colors[name],
-                    label=f'{name}  (AUC = {auc:.4f})')
+    auc_parts = []
+    for name, proba in probas_dict.items():
+        fpr, tpr, _ = roc_curve(y_true, proba)
+        auc = roc_auc_score(y_true, proba)
+        auc_parts.append(f'{name} {auc:.4f}')
+        ax.plot(fpr, tpr,
+                linestyle=styles[name],
+                linewidth=widths[name],
+                color=colors[name],
+                label=f'{name}  (AUC = {auc:.4f})')
 
-        if xlim == (0, 1):
-            ax.plot([0,1],[0,1],'--', linewidth=1,
-                    color='#666', alpha=0.6, label='Random classifier')
+    subtitle = 'Full-range view omitted — all AUC ≈ 0.999 (near-ceiling). ' + ' · '.join(auc_parts)
+    ax.text(0.5, 1.01, subtitle, transform=ax.transAxes,
+            fontsize=9, color='#888', ha='center', va='bottom')
 
-        legend = ax.legend(loc='lower right', fontsize=10,
-                           framealpha=0.3, edgecolor='#555',
-                           fancybox=False, labelcolor='white')
+    ax.set_xlim((0, 0.01))
+    ax.set_ylim((0.990, 1.001))
+    ax.grid(True, alpha=0.2, color='#555', linewidth=0.8)
 
-    draw_roc(axes[0], (0, 1), (0, 1.005),
-             'ROC curves — full view',
-             'All models converge near the top-left corner')
-
-    draw_roc(axes[1], (0, 0.01), (0.990, 1.001),
-             'ROC curves — zoomed (FPR 0–1%)',
-             'Separation between models at low false positive rates')
+    ax.legend(loc='lower right', fontsize=10,
+              framealpha=0.3, edgecolor='#555',
+              fancybox=False, labelcolor='white')
 
     fig.suptitle('XGBoost vs Random Forest vs Hybrid Ensemble',
-                 fontsize=14, color='white', y=1.02)
+                 fontsize=14, color='white', y=0.98)
 
     plt.tight_layout()
     path = os.path.join(FIGURES_DIR, 'roc_curves.png')
+    plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='#0e1117')
+    plt.close()
+    print(f"  Saved: {path}")
+
+
+# ── Metric comparison bar chart ────────────────────────────
+def plot_metric_comparison(metrics_list):
+    metric_names = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
+    model_names = [m['model'] for m in metrics_list]
+
+    bar_colors = {
+        'Random Baseline':     '#777777',
+        'Logistic Regression': '#E8A33D',
+        'XGBoost':             '#1F4E79',
+        'Random Forest':       '#2E75B6',
+        'Hybrid Ensemble':     '#C00000',
+    }
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    fig.patch.set_facecolor('#0e1117')
+    ax.set_facecolor('#0e1117')
+    for spine in ax.spines.values():
+        spine.set_color('#444')
+    ax.tick_params(colors='#aaa', labelsize=10)
+    ax.set_ylabel('Score', fontsize=11, color='#ccc', labelpad=8)
+    ax.set_title('Model Metric Comparison', fontsize=13, color='white', pad=16)
+
+    n_groups = len(metric_names)
+    n_models = len(model_names)
+    bar_width = 0.8 / n_models
+    x = np.arange(n_groups)
+
+    for i, m in enumerate(metrics_list):
+        values = [m[metric] for metric in metric_names]
+        offset = (i - (n_models - 1) / 2) * bar_width
+        ax.bar(x + offset, values, bar_width,
+               label=m['model'], color=bar_colors.get(m['model'], '#888888'))
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([n.upper() for n in metric_names], color='#ccc')
+    ax.set_ylim((0, 1.05))
+    ax.grid(True, axis='y', alpha=0.2, color='#555', linewidth=0.8)
+
+    ax.legend(loc='lower right', fontsize=10,
+              framealpha=0.3, edgecolor='#555',
+              fancybox=False, labelcolor='white')
+
+    plt.tight_layout()
+    path = os.path.join(FIGURES_DIR, 'metric_comparison.png')
     plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='#0e1117')
     plt.close()
     print(f"  Saved: {path}")
@@ -171,13 +215,13 @@ def run_mcnemar(y_true, pred_a, pred_b, name_a, name_b):
     print(f"    Chi-squared statistic: {stat:.4f}")
     print(f"    p-value: {pval:.6f}")
     if pval < 0.05:
-        print(f"    Result: SIGNIFICANT difference (p < 0.05)")
+        print("    Result: SIGNIFICANT difference (p < 0.05)")
         if b_count > c_count:
             print(f"    {name_a} is significantly better than {name_b}")
         else:
             print(f"    {name_b} is significantly better than {name_a}")
     else:
-        print(f"    Result: No significant difference (p >= 0.05)")
+        print("    Result: No significant difference (p >= 0.05)")
 
     return {
         'comparison': f'{name_a} vs {name_b}',
@@ -209,6 +253,20 @@ def main():
     hybrid_proba = W_XGB * xgb_proba + W_RF * rf_proba
     hybrid_pred  = (hybrid_proba >= 0.5).astype(int)
 
+    y_train = pd.read_csv('data/y_train.csv')['label']
+    dummy = DummyClassifier(strategy='stratified', random_state=42)
+    dummy.fit(np.zeros((len(y_train), 1)), y_train)
+    dummy_pred  = dummy.predict(np.zeros((len(y_test), 1)))
+    dummy_proba = np.asarray(dummy.predict_proba(np.zeros((len(y_test), 1))))[:, 1]
+
+    # ── Logistic Regression baseline (real simple model) ──
+    X_train_full = pd.read_csv('data/X_train.csv')
+    scaler = StandardScaler().fit(X_train_full)
+    logreg = LogisticRegression(max_iter=1000, random_state=42)
+    logreg.fit(scaler.transform(X_train_full), y_train)
+    logreg_proba = np.asarray(logreg.predict_proba(scaler.transform(X_test)))[:, 1]
+    logreg_pred  = (logreg_proba >= 0.5).astype(int)
+
     print("  Done.")
 
     # ── Metrics table ────────────────────────────────────
@@ -217,9 +275,11 @@ def main():
     print("=" * 65)
 
     metrics = [
-        compute_metrics("XGBoost",         y_test, xgb_pred,    xgb_proba),
-        compute_metrics("Random Forest",   y_test, rf_pred,     rf_proba),
-        compute_metrics("Hybrid Ensemble", y_test, hybrid_pred, hybrid_proba),
+        compute_metrics("Random Baseline",     y_test, dummy_pred,  dummy_proba),
+        compute_metrics("Logistic Regression", y_test, logreg_pred, logreg_proba),
+        compute_metrics("XGBoost",             y_test, xgb_pred,    xgb_proba),
+        compute_metrics("Random Forest",       y_test, rf_pred,     rf_proba),
+        compute_metrics("Hybrid Ensemble",     y_test, hybrid_pred, hybrid_proba),
     ]
 
     df_metrics = pd.DataFrame(metrics).set_index('model')
@@ -250,6 +310,8 @@ def main():
         'Random Forest':   rf_proba,
         'Hybrid Ensemble': hybrid_proba,
     })
+
+    plot_metric_comparison(metrics)
 
     # ── McNemar's tests ──────────────────────────────────
     print("\n" + "=" * 65)
