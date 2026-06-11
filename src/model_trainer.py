@@ -6,7 +6,7 @@ Author: Cheah Qi Yang (22095483)
 Module: src/model_trainer.py
 
 Purpose:
-    Train XGBoost + Random Forest ensemble on PhiUSIIL features.
+    Train XGBoost + Random Forest ensemble on the 24 extracted lexical features.
     Compare F1 scores to justify ensemble weights for hybrid scorer.
 
 Inputs:
@@ -192,8 +192,8 @@ def main():
     w_xgb, w_rf = compute_ensemble_weights(xgb_metrics['f1'], rf_metrics['f1'])
     print(f"  XGBoost F1:       {xgb_metrics['f1']:.4f}")
     print(f"  Random Forest F1: {rf_metrics['f1']:.4f}")
-    print(f"  → XGBoost weight: {w_xgb:.4f}")
-    print(f"  → Random Forest weight: {w_rf:.4f}")
+    print(f"  -> XGBoost weight: {w_xgb:.4f}")
+    print(f"  -> Random Forest weight: {w_rf:.4f}")
     print(f"\n  Hybrid score = ({w_xgb:.2f} × XGB_proba) + ({w_rf:.2f} × RF_proba)")
     
     # ============================================================

@@ -176,11 +176,11 @@ if xgb_current_rank == 1:
     print("XGBoost: Your current parameters ARE the optimal configuration.")
     print("Thesis: 'Grid search confirmed n_estimators=300, max_depth=8 as optimal.'")
 elif xgb_current_rank and xgb_current_rank <= 3:
-    print(f"XGBoost: Your parameters rank #{xgb_current_rank} — near-optimal.")
+    print(f"XGBoost: Your parameters rank #{xgb_current_rank} - near-optimal.")
     print(f"Best params: {xgb_grid.best_params_}")
     print("Thesis: 'Parameters were within top-3 of grid search results.'")
 else:
     print(f"XGBoost best params differ: {xgb_grid.best_params_}")
     print("Consider retraining with best params if F1 improvement > 0.001")
 
-print("\n✅ Hyperparameter tuning complete.")
+print("\n[DONE] Hyperparameter tuning complete.")

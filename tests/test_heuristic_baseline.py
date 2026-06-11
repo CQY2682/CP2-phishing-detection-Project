@@ -106,12 +106,12 @@ def main():
     print(f"\n  Phishing detection (recall):")
     print(f"    HIGH_RISK   : {phish_caught:>6,} / {phishing_total:,} ({phish_caught/phishing_total*100:.2f}%)")
     print(f"    SUSPICIOUS  : {phish_suspicious:>6,} / {phishing_total:,} ({phish_suspicious/phishing_total*100:.2f}%)")
-    print(f"    Missed (→ML): {phish_missed:>6,} / {phishing_total:,} ({phish_missed/phishing_total*100:.2f}%)")
+    print(f"    Missed (->ML): {phish_missed:>6,} / {phishing_total:,} ({phish_missed/phishing_total*100:.2f}%)")
     
     print(f"\n  Legitimate handling (false positive rate):")
-    print(f"    HIGH_RISK   : {legit_fp_high:>6,} / {legit_total:,} ({legit_fp_high/legit_total*100:.4f}%) ← FP")
+    print(f"    HIGH_RISK   : {legit_fp_high:>6,} / {legit_total:,} ({legit_fp_high/legit_total*100:.4f}%) <- FP")
     print(f"    SUSPICIOUS  : {legit_fp_suspicious:>6,} / {legit_total:,} ({legit_fp_suspicious/legit_total*100:.4f}%)")
-    print(f"    CLEAN (→ML) : {legit_clean:>6,} / {legit_total:,} ({legit_clean/legit_total*100:.2f}%)")
+    print(f"    CLEAN (->ML) : {legit_clean:>6,} / {legit_total:,} ({legit_clean/legit_total*100:.2f}%)")
     
     print(f"\n  ML workload savings:")
     cleared = (df['verdict'] == 'HIGH_RISK').sum()

@@ -30,7 +30,8 @@ import math
 import re
 from collections import Counter
 from typing import Dict
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
+import Levenshtein
 
 
 # ============================================================
@@ -293,9 +294,6 @@ def brand_in_path_not_domain(url: str) -> int:
 # These are the CP2 "innovation" — beyond standard ML features.
 
 
-from urllib.parse import unquote
-
-
 def recursive_decode_depth(url: str, max_iterations: int = 10) -> int:
     """
     Feature #21: How many URL-decode iterations until the string stabilizes.
@@ -339,10 +337,9 @@ def recursive_decode_depth(url: str, max_iterations: int = 10) -> int:
         return depth
     except Exception:
         return 0
+
+
 # New advanced helpers (IDN / typosquat)
-
-import Levenshtein
-
 
 # Top brands for typosquat detection (extend as needed)
 TOP_BRANDS = [

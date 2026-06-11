@@ -158,11 +158,11 @@ def main():
     print(f"  Errors: {len(errors)} / {len(df)} ({len(errors)/len(df)*100:.4f}%)")
     
     if len(errors) == 0:
-        print("\n  ✅ All 24 features work on full dataset. Ready for Week 3.")
+        print("\n  [DONE] All 24 features work on full dataset. Ready for Week 3.")
     elif len(errors) < 100:
-        print(f"\n  🟡 {len(errors)} errors (< 0.1%). Acceptable, investigate later.")
+        print(f"\n  [WARN] {len(errors)} errors (< 0.1%). Acceptable, investigate later.")
     else:
-        print(f"\n  ❌ {len(errors)} errors. Need to fix before Week 3.")
+        print(f"\n  [FAIL] {len(errors)} errors. Need to fix before Week 3.")
 
 
 if __name__ == "__main__":

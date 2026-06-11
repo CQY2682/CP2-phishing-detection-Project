@@ -99,7 +99,7 @@ def main():
 
     print(f"\n  Speed: {total/elapsed:.0f} URLs/sec")
     print(f"\n  Saved: {OUTPUT}")
-    print("\n✅ Milestone E complete.")
+    print("\n[DONE] Milestone E complete.")
 
 
 if __name__ == "__main__":

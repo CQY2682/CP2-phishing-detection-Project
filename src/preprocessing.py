@@ -63,7 +63,7 @@ def remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     before = len(df)
     df = df.drop_duplicates(subset=['URL'], keep='first').reset_index(drop=True)
     removed = before - len(df)
-    print(f"  Removed {removed} duplicates → {len(df):,} unique URLs remain")
+    print(f"  Removed {removed} duplicates -> {len(df):,} unique URLs remain")
     return df
 
 
@@ -142,7 +142,7 @@ def save_splits(X_train, X_test, y_train, y_test, output_dir: str):
         path = os.path.join(output_dir, filename)
         data.to_csv(path, index=False)
         size_mb = os.path.getsize(path) / 1024**2
-        print(f"  {filename:15s} → {data.shape}, {size_mb:.2f} MB")
+        print(f"  {filename:15s} -> {data.shape}, {size_mb:.2f} MB")
 
 
 def main():

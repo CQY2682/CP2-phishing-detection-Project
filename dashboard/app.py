@@ -21,6 +21,7 @@ Run: streamlit run dashboard/app.py
 
 import sys
 import os
+import json
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -351,6 +352,17 @@ def load_explainer(_xgb_model):
     return shap.TreeExplainer(_xgb_model)
 
 
+@st.cache_data
+def load_hybrid_metrics():
+    """Load the Hybrid Ensemble row from reports/full_evaluation.json."""
+    with open(os.path.join(os.path.dirname(__file__), '..', 'reports', 'full_evaluation.json')) as f:
+        data = json.load(f)
+    for m in data['metrics']:
+        if m['model'] == 'Hybrid Ensemble':
+            return m
+    return None
+
+
 # ── SHAP plot ──────────────────────────────────────────────
 def shap_waterfall(features, xgb_model, explainer):
     X = pd.DataFrame([features])[FEATURE_NAMES]
@@ -418,14 +430,23 @@ Attackers get free SSL certificates to show the padlock icon — HTTPS no longer
 Fake domains using Cyrillic/Greek characters that look identical to English in browser address bar.
         """)
         st.markdown("---")
-        st.markdown("**Performance**")
-        st.markdown("""
-- F1 Score: **0.9977**
-- ROC-AUC: **0.9988**
-- Precision: **99.97%**
+        st.markdown("**Performance (Hybrid Ensemble)**")
+        hybrid_metrics = load_hybrid_metrics()
+        if hybrid_metrics:
+            st.markdown(f"""
+- Accuracy: **{hybrid_metrics['accuracy']:.4f}**
+- Precision: **{hybrid_metrics['precision']*100:.2f}%**
+- Recall: **{hybrid_metrics['recall']:.4f}**
+- F1 Score: **{hybrid_metrics['f1']:.4f}**
+- ROC-AUC: **{hybrid_metrics['roc_auc']:.4f}**
 - OpenPhish Detection: **100%** (300 URLs)
 - Adversarial Retention: **100%** (5 mutations)
-        """)
+            """)
+        else:
+            st.markdown("""
+- OpenPhish Detection: **100%** (300 URLs)
+- Adversarial Retention: **100%** (5 mutations)
+            """)
 
 
 # ── Scan history ───────────────────────────────────────────

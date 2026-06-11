@@ -2,7 +2,6 @@
 CP2 Full Evaluation (Post-Supervisor Feedback)
 ================================================
 Author: Cheah Qi Yang (22095483)
-# type: ignore
 Purpose:
     Generate complete evaluation metrics beyond F1:
     - Precision, Recall, F1, Accuracy, ROC-AUC, MCC
@@ -35,7 +34,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# Removed unused import to satisfy Pylance
 
 # ── Constants ──────────────────────────────────────────────
 W_XGB = 0.5001

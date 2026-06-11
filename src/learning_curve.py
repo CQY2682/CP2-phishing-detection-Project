@@ -13,13 +13,13 @@ Purpose:
 Run: python src/learning_curve.py
 """
 
-import os, sys
+import os
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import joblib
 from sklearn.model_selection import learning_curve
 from sklearn.metrics import f1_score, make_scorer
 import xgboost as xgb
@@ -88,7 +88,7 @@ def plot_learning_curve(estimator, name, X, y, filename):
     ax.legend(loc='lower right', fontsize=11)
     ax.grid(True, alpha=0.2)
     ax.tick_params(colors='white')
-    ax.set_ylim([0.93, 1.01])
+    ax.set_ylim((0.93, 1.01))
 
     # Add gap annotation at final point
     final_gap = abs(train_mean[-1] - val_mean[-1])
@@ -173,7 +173,7 @@ for ax, train_m, val_m, name, color in zip(
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.2)
     ax.tick_params(colors='white')
-    ax.set_ylim([0.93, 1.01])
+    ax.set_ylim((0.93, 1.01))
 
 fig.suptitle(
     'Learning Curves — Training vs Validation F1\n'
@@ -200,7 +200,7 @@ if xgb_gap < 0.01 and rf_gap < 0.01:
     print("  Both models show converging train/validation curves.")
     print("  Gap < 0.01 confirms strong generalization.")
 else:
-    print(f"\n  WARNING: Gap > 0.01 detected. Investigate further.")
+    print("\n  WARNING: Gap > 0.01 detected. Investigate further.")
 
 print(f"\n  Figures saved to: {FIGURES_DIR}/")
-print("\n✅ Learning curve analysis complete.")
+print("\n[DONE] Learning curve analysis complete.")

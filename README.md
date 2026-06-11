@@ -1,2 +1,220 @@
-# CP2-phishing-detection-Project
-Working in progress )%
+# PhishLens — Hybrid Machine Learning Framework for Phishing URL Detection
+
+A lightweight, interpretable phishing-URL detector that combines a MITRE-mapped
+heuristic engine with a tree-based machine learning ensemble. Built using **lexical
+URL features only** — no page content is downloaded, enabling real-time detection.
+
+**Author:** Cheah Qi Yang (22095483)
+**Supervisor:** Dr Mohd Firdaus Roslan
+**Programme:** BSc Information Technology (Networking & Security) (HONS), Sunway University
+**Project:** Capstone Project 2 — September 2025
+
+---
+
+## 1. Overview
+
+Phishing remains a leading cause of credential theft and financial fraud. Blacklists
+are reactive and miss zero-day URLs; deep-learning detectors are accurate but heavy and
+hard to interpret. PhishLens targets the middle ground: high accuracy, low latency, and
+explainable decisions, using only features extracted directly from the URL string.
+
+The system classifies a URL through a **three-layer defense-in-depth pipeline** and
+presents the result, with a plain-English explanation, through a Streamlit dashboard.
+
+---
+
+## 2. Architecture (Three-Layer Defense-in-Depth)
+
+```
+        Raw URL
+           │
+           ▼
+┌─────────────────────────────┐
+│ Layer 1 — Heuristic Engine  │  8 MITRE-mapped rules.
+│ (src/heuristic_engine.py)   │  Triggered rule → instant HIGH_RISK, ML bypassed.
+└─────────────────────────────┘
+           │ (passes filter)
+           ▼
+┌─────────────────────────────┐
+│ Layer 2 — ML Ensemble       │  XGBoost + Random Forest.
+│ (src/model_trainer.py)      │  F1-justified ensemble weights.
+└─────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│ Layer 3 — Hybrid Scorer     │  Disagreement Escalation + trusted-domain
+│ (src/hybrid_scorer.py)      │  whitelist. Outputs CVSS-style severity.
+└─────────────────────────────┘
+           │
+           ▼
+   Severity + Explanation  →  Streamlit dashboard
+```
+
+**Key design choices**
+
+- **Layer 1 fail-fast:** obvious threats (IP-based URLs, punycode, embedded
+  credentials, etc.) are caught instantly without invoking the ML models, keeping the
+  system fast.
+- **Disagreement Escalation:** when the heuristic flags a URL as suspicious but the ML
+  ensemble scores it safe, the result is *escalated*, not averaged — favouring caution.
+- **Trusted-domain whitelist:** known-legitimate domains (e.g. `maybank2u.com.my`)
+  short-circuit false positives.
+
+---
+
+## 3. Repository Structure
+
+| Path | Purpose | Produces |
+|---|---|---|
+| `src/feature_extractor.py` | Extracts the 24 lexical features from a URL (incl. Malay login keywords) | feature vectors |
+| `src/preprocessing.py` | Label flip (raw PhiUSIIL labels are reversed), dedup, stratified 80/20 split | `data/X_*.csv`, `data/y_*.csv` |
+| `src/heuristic_engine.py` | Layer 1 — 8 MITRE ATT&CK-mapped detection rules | rule verdicts |
+| `src/augment_training.py` | Adds 124 curated real-world URLs to fix homepage bias | augmented training split |
+| `src/model_trainer.py` | Layer 2 — trains XGBoost + Random Forest; computes F1-justified weights (`--augmented` flag) | `models/*.joblib`, `reports/training_metrics.json`, `reports/feature_importances.csv` |
+| `src/hybrid_scorer.py` | Layer 3 — Disagreement Escalation, trusted-domain whitelist, CVSS severity | final classification |
+| `src/adversarial_mutator.py` | Generates 5 mutation types to stress-test robustness | `reports/adversarial_results.csv` |
+| `src/phishtank_holdout.py` | Blind hold-out evaluation on OpenPhish feed | `reports/openphish_holdout_results.csv` |
+| `src/evaluation.py` | Full metrics, ROC curves, confusion matrices, baselines, McNemar's test | `reports/full_evaluation.json`, figures |
+| `src/hyperparameter_tuning.py` | Grid search (48 combos, 5-fold CV) | `reports/hyperparameter_results.json` |
+| `src/learning_curve.py` | Learning-curve convergence (overfitting check) | learning-curve figures |
+| `src/train_val_test.py` | 64/16/20 split overfitting analysis | `reports/train_val_test_results.json` |
+| `src/leakage_check.py` | Feature-space overlap / data-integrity audit | `reports/leakage_check.json` |
+| `src/honest_eval.py` | Re-evaluates models on the collision-free test subset | `reports/collision_analysis.json` |
+| `dashboard/app.py` | Streamlit dashboard (PhishLens UI): MITRE inference, plain-English output, risk gauge, batch scan, scan history, top-3 signals, jargon toggle | interactive app |
+| `notebooks/01_dataset_exploration.ipynb` | Exploratory data analysis | findings JSON |
+| `tests/` | Unit / integration tests (heuristic baseline, model bias, integration, performance) | test results |
+| `reports/figures/` | All generated figures (ROC, confusion matrices, learning curves, metric comparison) | `.png` |
+| `reports/` | All metric outputs (JSON / CSV) | machine-readable results |
+
+> **Note:** `data/` and `models/` are git-ignored (large files). They are regenerated by
+> the preprocessing and training scripts, or transferred separately.
+
+---
+
+## 4. The 24 Lexical Features
+
+Selected via a **knowledge-driven method** (MITRE ATT&CK + literature), validated
+post-training by XGBoost feature importance.
+
+**Structural (1–10):** url_length, qty_dot, qty_hyphen, qty_slash, qty_at,
+qty_question, qty_equal, qty_percent, domain_length, tld_length
+
+**Statistical (11–15):** url_entropy, domain_entropy, digit_ratio, alpha_ratio,
+char_continuation_rate
+
+**Content (16–20):** has_https, has_shortener, has_login_keyword, is_ip,
+brand_in_path_not_domain
+
+**Advanced / MITRE-aligned (21–24):** recursive_decode_depth (T1027.001),
+idn_homograph_flag (T1036.007), levenshtein_min (T1566.002), tld_risk_score (T1583.001)
+
+---
+
+## 5. Heuristic Rules (Layer 1)
+
+| Rule | Triggers on | MITRE technique |
+|---|---|---|
+| `ip_url` | IP address as domain | T1071.001 |
+| `idn_punycode` | `xn--` punycode encoding | T1036.007 |
+| `multi_encoded` | URL encoded 2+ times | T1027.001 |
+| `aitm_pattern` | adversary-in-the-middle patterns (e.g. `m365-login`) | T1557 |
+| `brand_spoof_sus_tld` | brand in path + high TLD risk | T1583.001 + T1566.002 |
+| `ip_with_login` | IP + login keywords | T1071.001 + T1566.002 |
+| `embedded_credentials` | `@` symbol in URL | T1566.002 |
+| `typosquat` | Levenshtein distance 1 from a known brand | T1566.002 |
+
+---
+
+## 6. Dataset
+
+- **Primary:** PhiUSIIL Phishing URL Dataset (Kumar & Patil, 2023), UCI ML Repository —
+  235,795 rows. Only the `url` and `label` columns are used; the 24 features are
+  extracted by this project's own pipeline (the dataset's pre-extracted columns are *not* used).
+- **Important:** raw PhiUSIIL labels are reversed (0 = phishing, 1 = legitimate);
+  `preprocessing.py` flips them.
+- After deduplication: 235,370 unique rows → 188,296 train / 47,074 test (stratified).
+- **Blind hold-out:** OpenPhish Community Feed (PhishTank was disabled in 2024).
+
+---
+
+## 7. Results Summary
+
+**Test set (47,074 URLs) — Hybrid Ensemble**
+
+| Metric | Score |
+|---|---|
+| Accuracy | 0.9980 |
+| Precision | 0.9998 |
+| Recall | 0.9955 |
+| F1 | 0.9976 |
+| ROC-AUC | 0.9990 |
+| MCC | 0.9959 |
+
+**Robustness & generalization**
+
+- **Adversarial testing:** 100% detection retention across 5 mutation types (zero evasions).
+- **OpenPhish blind hold-out:** 100% detection on 300 unseen real phishing URLs.
+- **Overfitting:** train/val/test gap < 0.002; learning curves converge.
+- **Baselines:** stratified random baseline F1 ≈ 0.43; logistic-regression baseline added
+  for a real simple-model reference — the ensemble's lift confirms genuine feature signal.
+- **Data-integrity audit:** ~50% of test rows share a feature vector with training
+  (feature collision, an intrinsic property of compact lexical features). Re-evaluating on
+  the **collision-free subset** gives F1 = 0.9977 — identical to the full set, confirming
+  performance is not an artifact of memorization.
+
+---
+
+## 8. How to Run
+
+```bash
+# 1. Activate the virtual environment
+.\.venv\Scripts\Activate.ps1          # Windows PowerShell
+
+# 2. Preprocess (label flip, dedup, split)
+python src/preprocessing.py
+
+# 3. Train the ensemble (add --augmented to use the augmented training set)
+python src/model_trainer.py
+python src/model_trainer.py --augmented
+
+# 4. Evaluate (metrics, ROC, confusion matrices, baselines, McNemar)
+python src/evaluation.py
+
+# 5. Additional analyses
+python src/train_val_test.py          # overfitting analysis
+python src/learning_curve.py          # learning-curve convergence
+python src/hyperparameter_tuning.py   # grid search
+python src/adversarial_mutator.py     # adversarial robustness
+python src/phishtank_holdout.py       # OpenPhish blind hold-out
+python src/leakage_check.py           # data-integrity audit
+python src/honest_eval.py             # collision-free re-evaluation
+
+# 6. Launch the dashboard
+streamlit run dashboard/app.py
+```
+
+> On some machines use `py` instead of `python` if Python is not on PATH.
+
+---
+
+## 9. Tech Stack
+
+Python 3.11 · pandas · numpy · scikit-learn · xgboost · shap · streamlit ·
+statsmodels · joblib · matplotlib
+
+---
+
+## 10. Notes & Limitations
+
+- **Lexical-only:** the system reads the URL string, never page content — fast and
+  privacy-preserving, but cannot inspect rendered page behaviour.
+- **Feature collision:** compact lexical features cause distinct URLs to map to identical
+  vectors; this is documented and controlled for via the collision-free evaluation.
+- **Dataset characteristics:** PhiUSIIL legitimate URLs are largely homepages and are
+  100% HTTPS; augmentation and a trusted-domain whitelist mitigate the resulting bias,
+  and OpenPhish confirms generalization to independent data.
+
+---
+
+*This README documents the system as built. Evaluation is complete and the architecture
+(24 features, three-layer hybrid, Disagreement Escalation) is finalized.*

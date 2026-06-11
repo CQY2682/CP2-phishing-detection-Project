@@ -24,3 +24,9 @@ joblib==1.4.2
 # Visualization
 matplotlib==3.9.3
 seaborn==0.13.2
+
+# Statistical tests (McNemar's test in evaluation.py)
+statsmodels==0.14.6
+
+# Memory profiling (tests/ram_bottleneck_test.py)
+psutil==7.2.2

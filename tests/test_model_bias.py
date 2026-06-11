@@ -13,6 +13,7 @@ Run: python tests/test_model_bias.py
 
 import sys
 import os
+import json
 import pandas as pd
 import joblib
 
@@ -20,12 +21,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from feature_extractor import extract_features, FEATURE_NAMES
 
 # Load models
-xgb_model = joblib.load('models/xgboost_model.joblib')
-rf_model = joblib.load('models/rf_model.joblib')
+try:
+    xgb_model = joblib.load('models/xgboost_model.joblib')
+    rf_model = joblib.load('models/rf_model.joblib')
+except FileNotFoundError:
+    print("ERROR: models/ not found. Run this script from the project root.")
+    sys.exit(1)
 
-# Ensemble weights from training
-W_XGB = 0.5
-W_RF = 0.5
+# F1-justified ensemble weights from training_metrics.json
+with open('reports/training_metrics.json') as f:
+    _metrics = json.load(f)
+W_XGB = _metrics['ensemble_weights']['xgboost_weight']
+W_RF = _metrics['ensemble_weights']['rf_weight']
 
 def predict(url):
     features = extract_features(url)
@@ -90,7 +97,7 @@ false_negatives = []
 for url, expected, desc in test_urls:
     verdict, score, features = predict(url)
     correct = verdict == expected
-    status = "✅" if correct else "❌"
+    status = "[PASS]" if correct else "[FAIL]"
     if correct:
         passed += 1
     else:
@@ -107,7 +114,7 @@ print("-" * 75)
 print(f"\nResults: {passed}/{len(test_urls)} passed")
 
 if false_positives:
-    print(f"\n⚠️  FALSE POSITIVES (legit URLs flagged as phishing):")
+    print("\nWARNING: FALSE POSITIVES (legit URLs flagged as phishing):")
     for url, score, desc in false_positives:
         print(f"  Score {score:.3f} | {desc}")
         print(f"  URL: {url[:80]}")
@@ -116,7 +123,7 @@ if false_positives:
         print(f"  qty_slash={features['qty_slash']} | has_https={features['has_https']} | url_length={features['url_length']}")
 
 if false_negatives:
-    print(f"\n⚠️  FALSE NEGATIVES (phishing URLs missed):")
+    print("\nWARNING: FALSE NEGATIVES (phishing URLs missed):")
     for url, score, desc in false_negatives:
         print(f"  Score {score:.3f} | {desc}")
 
@@ -124,8 +131,14 @@ print("\n" + "=" * 75)
 print("BIAS ANALYSIS")
 print("=" * 75)
 print("\nKey features driving model:")
-print("  qty_slash: 50.21% importance")
-print("  has_https: 48.81% importance")
+try:
+    importances = pd.read_csv('reports/feature_importances.csv')
+    top = importances.sort_values('xgb_importance', ascending=False).head(2)
+    for _, row in top.iterrows():
+        print(f"  {row['feature']}: {row['xgb_importance']*100:.2f}% (XGB) / "
+              f"{row['rf_importance']*100:.2f}% (RF) importance")
+except FileNotFoundError:
+    print("  (reports/feature_importances.csv not found — run model_trainer.py first)")
 print("\nPhiUSIIL bias:")
 print("  Legitimate = homepage only (max 2 slashes, always HTTPS)")
 print("  Phishing = paths + params (3+ slashes, 48% HTTP)")

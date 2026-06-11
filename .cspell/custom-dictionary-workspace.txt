@@ -1,6 +1,8 @@
 # Custom Dictionary Words
 akaun
 APWG
+arrowprops
+arrowstyle
 AUGMENTED
 axins
 bayaran
@@ -25,6 +27,7 @@ labelsize
 laluan
 linestyle
 logloss
+logreg
 markersize
 masuk
 mcnemar
@@ -58,5 +61,6 @@ xlabel
 xlim
 xticklabels
 xticks
+xytext
 ylabel
 ylim

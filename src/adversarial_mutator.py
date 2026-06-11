@@ -3,14 +3,18 @@ CP2 Adversarial Robustness Testing (Milestone D)
 Author: Cheah Qi Yang (22095483)
 """
 
-import os, sys, random, urllib.parse
+import os
+import sys
+import random
+import urllib.parse
+import json
+from typing import Any
 import pandas as pd
 import joblib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from feature_extractor import extract_features, FEATURE_NAMES
 from heuristic_engine import heuristic_check
-import json
 
 # Load ensemble weights from training metrics
 with open('reports/training_metrics.json') as f:
@@ -18,8 +22,8 @@ with open('reports/training_metrics.json') as f:
 W_XGB = _m['ensemble_weights']['xgboost_weight']
 W_RF  = _m['ensemble_weights']['rf_weight']
 
-_xgb = None
-_rf  = None
+_xgb: Any = None
+_rf:  Any = None
 
 def _load():
     global _xgb, _rf
@@ -44,7 +48,7 @@ BENIGN_PATHS = ['/legal','/privacy','/terms','/about','/help']
 
 def mut_subdomain(url):
     p = urllib.parse.urlparse(url)
-    netloc = p.netloc.lstrip('www.')
+    netloc = p.netloc[4:] if p.netloc.startswith('www.') else p.netloc
     return p._replace(netloc=f"{random.choice(BENIGN_SUBS)}.{netloc}").geturl()
 
 def mut_https(url):
@@ -161,8 +165,8 @@ def main():
     print(f"  Mutations applied: {len(df)}")
     print(f"  Overall detection: {df['detected_after'].mean()*100:.1f}%")
     print(f"  Overall evasion:   {df['evaded'].mean()*100:.1f}%")
-    print(f"\n  Saved: reports/adversarial_results.csv")
-    print("\n✅ Milestone D complete.")
+    print("\n  Saved: reports/adversarial_results.csv")
+    print("\n[DONE] Milestone D complete.")
 
 if __name__ == "__main__":
     main()

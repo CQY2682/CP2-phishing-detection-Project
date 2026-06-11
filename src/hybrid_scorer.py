@@ -36,6 +36,7 @@ Usage:
 
 import os
 import sys
+from typing import Any
 import joblib
 import pandas as pd
 
@@ -92,8 +93,8 @@ RF_PATH  = 'models/rf_model.joblib'
 # MODEL LOADER (lazy load — only loads once)
 # ============================================================
 
-_xgb_model = None
-_rf_model = None
+_xgb_model: Any = None
+_rf_model: Any = None
 
 def _load_models():
     global _xgb_model, _rf_model
