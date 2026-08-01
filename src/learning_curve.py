@@ -100,7 +100,7 @@ def plot_learning_curve(estimator, name, X, y, filename):
 
     plt.tight_layout()
     path = os.path.join(FIGURES_DIR, filename)
-    plt.savefig(path, dpi=150, bbox_inches='tight',
+    plt.savefig(path, dpi=300, bbox_inches='tight',
                 facecolor='#0e1117')
     plt.close()
     print(f"  Saved: {path}")
@@ -182,7 +182,7 @@ fig.suptitle(
 )
 plt.tight_layout()
 path = os.path.join(FIGURES_DIR, 'learning_curves_combined.png')
-plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='#0e1117')
+plt.savefig(path, dpi=300, bbox_inches='tight', facecolor='#0e1117')
 plt.close()
 print(f"  Saved: {path}")
 

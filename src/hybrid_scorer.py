@@ -63,6 +63,7 @@ TRUSTED_DOMAINS = {
     'python.org', 'stackoverflow.com', 'wikipedia.org',
     'youtube.com', 'linkedin.com', 'twitter.com', 'facebook.com',
     'amazon.com', 'paypal.com', 'netflix.com', 'spotify.com',
+    'sunway.edu.my',
 }
 
 def _is_trusted_domain(url: str) -> bool:

@@ -78,7 +78,7 @@ def plot_confusion_matrix(name, y_true, y_pred, filename):
     ax.set_title(f'Confusion Matrix — {name}', fontsize=13, pad=12)
     plt.tight_layout()
     path = os.path.join(FIGURES_DIR, filename)
-    plt.savefig(path, dpi=150, bbox_inches='tight')
+    plt.savefig(path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"  Saved: {path}")
 
@@ -88,9 +88,9 @@ def plot_roc_curves(y_true, probas_dict):
     fig, ax = plt.subplots(figsize=(10, 6))
     fig.patch.set_facecolor('#0e1117')
 
-    colors = {'XGBoost': '#1F4E79', 'Random Forest': '#2E75B6', 'Hybrid Ensemble': '#C00000'}
-    styles = {'XGBoost': '-', 'Random Forest': '--', 'Hybrid Ensemble': '-.'}
-    widths = {'XGBoost': 3, 'Random Forest': 3, 'Hybrid Ensemble': 2.5}
+    colors = {'XGBoost':'#4A9EDA','Random Forest':'#F0B429','Hybrid Ensemble':'#C00000'}
+    styles = {'XGBoost':'-','Random Forest':(0,(10,2)),'Hybrid Ensemble':(0,(5,2))}
+    widths = {'XGBoost':2.0,'Random Forest':2.0,'Hybrid Ensemble':1.8}
 
     ax.set_facecolor('#0e1117')
     for spine in ax.spines.values():
@@ -98,22 +98,17 @@ def plot_roc_curves(y_true, probas_dict):
     ax.tick_params(colors='#aaa', labelsize=10)
     ax.set_xlabel('False Positive Rate', fontsize=11, color='#ccc', labelpad=8)
     ax.set_ylabel('True Positive Rate', fontsize=11, color='#ccc', labelpad=8)
-    ax.set_title('ROC curves — zoomed (FPR 0–1%)', fontsize=13, color='white', pad=16)
+    ax.set_title('ROC Curves (zoomed to FPR 0 to 1%)',
+                 fontsize=14, color='white', pad=16)
 
-    auc_parts = []
     for name, proba in probas_dict.items():
         fpr, tpr, _ = roc_curve(y_true, proba)
         auc = roc_auc_score(y_true, proba)
-        auc_parts.append(f'{name} {auc:.4f}')
         ax.plot(fpr, tpr,
                 linestyle=styles[name],
                 linewidth=widths[name],
                 color=colors[name],
                 label=f'{name}  (AUC = {auc:.4f})')
-
-    subtitle = 'Full-range view omitted — all AUC ≈ 0.999 (near-ceiling). ' + ' · '.join(auc_parts)
-    ax.text(0.5, 1.01, subtitle, transform=ax.transAxes,
-            fontsize=9, color='#888', ha='center', va='bottom')
 
     ax.set_xlim((0, 0.01))
     ax.set_ylim((0.990, 1.001))
@@ -123,20 +118,17 @@ def plot_roc_curves(y_true, probas_dict):
               framealpha=0.3, edgecolor='#555',
               fancybox=False, labelcolor='white')
 
-    fig.suptitle('XGBoost vs Random Forest vs Hybrid Ensemble',
-                 fontsize=14, color='white', y=0.98)
-
     plt.tight_layout()
     path = os.path.join(FIGURES_DIR, 'roc_curves.png')
-    plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='#0e1117')
+    plt.savefig(path, dpi=300, bbox_inches='tight', facecolor='#0e1117')
     plt.close()
     print(f"  Saved: {path}")
 
 
 # ── Metric comparison bar chart ────────────────────────────
-def plot_metric_comparison(metrics_list):
-    metric_names = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
-    model_names = [m['model'] for m in metrics_list]
+def plot_metric_comparison(metrics_list, filename='metric_comparison.png'):
+    metric_keys   = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'mcc']
+    metric_labels = ['Accuracy', 'Precision', 'Recall', 'F1', 'ROC-AUC', 'MCC']
 
     bar_colors = {
         'Random Baseline':     '#777777',
@@ -146,38 +138,46 @@ def plot_metric_comparison(metrics_list):
         'Hybrid Ensemble':     '#C00000',
     }
 
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(13, 6.5))
     fig.patch.set_facecolor('#0e1117')
     ax.set_facecolor('#0e1117')
+
+    x = np.arange(len(metric_keys))
+    n = len(metrics_list)
+    width = 0.8 / n
+
+    for i, m in enumerate(metrics_list):
+        vals = [m[k] for k in metric_keys]
+        offset = (i - (n - 1) / 2) * width
+        bars = ax.bar(x + offset, vals, width, label=m['model'],
+                      color=bar_colors.get(m['model'], '#888'))
+        for b, v in zip(bars, vals):
+            ax.text(b.get_x() + b.get_width() / 2, max(v, 0) + 0.025,
+                    f'{v:.4f}' if abs(v) < 0.01 else f'{v:.3f}',
+                    ha='center', va='bottom',
+                    fontsize=6.5, color='#ddd', rotation=90)
+
     for spine in ax.spines.values():
         spine.set_color('#444')
     ax.tick_params(colors='#aaa', labelsize=10)
-    ax.set_ylabel('Score', fontsize=11, color='#ccc', labelpad=8)
-    ax.set_title('Model Metric Comparison', fontsize=13, color='white', pad=16)
-
-    n_groups = len(metric_names)
-    n_models = len(model_names)
-    bar_width = 0.8 / n_models
-    x = np.arange(n_groups)
-
-    for i, m in enumerate(metrics_list):
-        values = [m[metric] for metric in metric_names]
-        offset = (i - (n_models - 1) / 2) * bar_width
-        ax.bar(x + offset, values, bar_width,
-               label=m['model'], color=bar_colors.get(m['model'], '#888888'))
-
     ax.set_xticks(x)
-    ax.set_xticklabels([n.upper() for n in metric_names], color='#ccc')
-    ax.set_ylim((0, 1.05))
-    ax.grid(True, axis='y', alpha=0.2, color='#555', linewidth=0.8)
+    ax.set_xticklabels(metric_labels, color='#ccc', fontsize=10)
+    ax.set_ylim(-0.10, 1.30)
+    ax.axhline(0, color='#666', linewidth=0.9)
+    ax.set_ylabel('Score', fontsize=11, color='#ccc')
+    ax.set_title('Model Metric Comparison', fontsize=14, color='white', pad=30)
+    ax.text(0.5, 1.035,
+            'Random Baseline MCC is -0.0003, effectively zero, so its bar is not visible',
+            transform=ax.transAxes, fontsize=8.5, color='#888',
+            ha='center', va='bottom')
+    ax.grid(True, axis='y', alpha=0.18, color='#555', linewidth=0.8)
 
-    ax.legend(loc='lower right', fontsize=10,
-              framealpha=0.3, edgecolor='#555',
-              fancybox=False, labelcolor='white')
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.10), ncol=5,
+              fontsize=9, framealpha=0, edgecolor='none', labelcolor='white')
 
     plt.tight_layout()
-    path = os.path.join(FIGURES_DIR, 'metric_comparison.png')
-    plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='#0e1117')
+    path = os.path.join(FIGURES_DIR, filename)
+    plt.savefig(path, dpi=300, bbox_inches='tight', facecolor='#0e1117')
     plt.close()
     print(f"  Saved: {path}")
 

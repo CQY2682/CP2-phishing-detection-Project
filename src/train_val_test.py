@@ -164,7 +164,7 @@ fig.suptitle(
 )
 plt.tight_layout()
 path = os.path.join(FIGURES_DIR, 'train_val_test_comparison.png')
-plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='#0e1117')
+plt.savefig(path, dpi=300, bbox_inches='tight', facecolor='#0e1117')
 plt.close()
 print(f"  Saved: {path}")
 

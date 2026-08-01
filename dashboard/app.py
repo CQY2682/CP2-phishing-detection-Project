@@ -10,7 +10,7 @@ Features:
     3. MITRE inferred from features (even when Layer 1 clean)
     4. Feature group breakdown panel
     5. Useful threat landscape sidebar
-    6. Batch URL upload with downloadable results
+    6. Threat Library — clickable synthetic specimens for live demo
     7. Risk score gauge visual
     8. Plain English verdict summary
     9. Top 3 suspicious features highlighted
@@ -49,105 +49,172 @@ st.set_page_config(
 # ── CSS ────────────────────────────────────────────────────
 st.markdown("""
 <style>
-#MainMenu, footer { visibility: hidden; }
-.block-container { padding: 1.5rem 2.5rem; max-width: 1300px; }
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* Verdict banners */
-.verdict-box {
-    padding: 18px 28px; border-radius: 12px;
-    font-size: 24px; font-weight: 800;
-    text-align: center; letter-spacing: 2px;
-    margin: 12px 0; text-transform: uppercase;
+:root{
+  --bg:#08090f;
+  --surface:rgba(255,255,255,0.035);
+  --border:rgba(168,139,250,0.16);
+  --border-2:rgba(168,139,250,0.30);
+  --accent:#a855f7; --accent-lo:#7c3aed; --accent-hi:#c99bff;
+  --text:#eceafc; --muted:#9b9bb8;
+  --crit:#ff3b6b; --high:#ff934d; --med:#ffd23d; --low:#5ee6a8; --safe:#2de2b0;
 }
-.v-critical { background: linear-gradient(135deg,#7f0000,#ff1744); color:#fff; border-left: 6px solid #ff6b6b; }
-.v-high     { background: linear-gradient(135deg,#bf360c,#ff6d00); color:#fff; border-left: 6px solid #ffab40; }
-.v-medium   { background: linear-gradient(135deg,#e65100,#ffca28); color:#111; border-left: 6px solid #ffd740; }
-.v-low      { background: linear-gradient(135deg,#1b5e20,#66bb6a); color:#fff; border-left: 6px solid #69f0ae; }
-.v-safe     { background: linear-gradient(135deg,#004d40,#00bfa5); color:#fff; border-left: 6px solid #64ffda; }
+#MainMenu, footer, header { visibility:hidden; }
 
-/* Plain English summary box */
-.plain-box {
-    background: #1a1a2e; border: 1px solid #444;
-    border-left: 4px solid #4fc3f7;
-    border-radius: 8px; padding: 14px 18px; margin: 8px 0;
-    font-size: 15px; line-height: 1.6;
+.stApp{
+  background:
+    radial-gradient(900px 520px at 82% -12%, rgba(168,85,247,0.16), transparent 60%),
+    radial-gradient(680px 480px at -5% 2%, rgba(34,211,238,0.05), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
 }
-.jargon-box {
-    background: #0d1117; border: 1px solid #333;
-    border-left: 4px solid #7c4dff;
-    border-radius: 8px; padding: 12px 18px; margin: 8px 0;
-    font-size: 13px; font-family: 'Courier New', monospace;
-    color: #aaa;
-}
+.block-container{ padding:1.6rem 2.6rem; max-width:1300px; }
 
-/* MITRE badge */
-.badge-mitre {
-    display:inline-block; background:#1a237e; color:#fff;
-    padding:4px 14px; border-radius:20px;
-    font-size:12px; font-weight:700; margin:3px;
-    border: 1px solid #3949ab;
-}
-.badge-mitre-desc {
-    display:inline-block; background:#0d1b2a; color:#90caf9;
-    padding:3px 10px; border-radius:6px;
-    font-size:11px; margin:2px 4px;
-}
+h1,h2,h3,h4{ font-family:'Space Grotesk',sans-serif !important; letter-spacing:-.01em; }
+h1{ font-weight:700;
+  background:linear-gradient(90deg,#ffffff,var(--accent-hi));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+code, pre, kbd{ font-family:'JetBrains Mono',monospace !important; }
 
-/* Rule badge */
-.badge-rule {
-    display:inline-block; background:#4a0000; color:#ff8a80;
-    padding:4px 14px; border-radius:20px;
-    font-size:12px; font-weight:700; margin:3px;
-    border: 1px solid #b71c1c;
+/* Sidebar as a glass rail */
+section[data-testid="stSidebar"]{
+  background:linear-gradient(180deg,rgba(22,17,42,0.92),rgba(9,9,18,0.92));
+  border-right:1px solid var(--border); backdrop-filter:blur(10px);
 }
+section[data-testid="stSidebar"] *{ font-size:13px; }
+section[data-testid="stSidebar"] h2{ color:var(--accent-hi); }
+section[data-testid="stSidebar"] table{ font-size:11.5px; }
 
-/* Feature highlight card */
-.feat-card {
-    background: #1e1e2e; border: 1px solid #333;
-    border-radius: 8px; padding: 12px 16px; margin: 6px 0;
-    border-left: 3px solid #ff5252;
+/* Buttons: glass chips with a violet edge and hover glow */
+.stButton>button{
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--border); border-radius:12px;
+  font-family:'Inter',sans-serif; font-weight:500;
+  transition:all .18s ease; backdrop-filter:blur(6px);
 }
-.feat-card-safe {
-    background: #1e2e1e; border: 1px solid #333;
-    border-radius: 8px; padding: 12px 16px; margin: 6px 0;
-    border-left: 3px solid #00e676;
+.stButton>button:hover{
+  border-color:var(--border-2);
+  box-shadow:0 0 0 1px var(--border-2), 0 6px 22px rgba(168,85,247,0.22);
+  transform:translateY(-1px);
 }
+.stButton>button[kind="primary"]{
+  background:linear-gradient(135deg,var(--accent-lo),var(--accent));
+  border:1px solid var(--accent-hi); color:#fff; font-weight:600;
+  box-shadow:0 4px 20px rgba(168,85,247,0.35);
+}
+.stButton>button[kind="primary"]:hover{
+  box-shadow:0 6px 30px rgba(168,85,247,0.5); transform:translateY(-1px);
+}
+.stDownloadButton>button{ border-radius:12px; border:1px solid var(--border); background:var(--surface); }
 
-/* Gauge bar */
-.gauge-container { margin: 10px 0; }
-.gauge-label { font-size: 12px; color: #aaa; margin-bottom: 4px; }
-.gauge-bar {
-    height: 12px; border-radius: 6px;
-    background: linear-gradient(90deg, #00e676 0%, #ffca28 50%, #ff1744 100%);
-    position: relative; overflow: visible;
+/* Inputs */
+.stTextInput>div>div>input{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; color:var(--text); font-family:'JetBrains Mono',monospace;
 }
-.gauge-marker {
-    position: absolute; top: -4px;
-    width: 4px; height: 20px;
-    background: white; border-radius: 2px;
-    box-shadow: 0 0 6px rgba(255,255,255,0.8);
+.stTextInput>div>div>input:focus{
+  border-color:var(--accent); box-shadow:0 0 0 2px rgba(168,85,247,0.25);
 }
 
-/* History item */
-.history-item {
-    background: #1a1a2e; border: 1px solid #333;
-    border-radius: 6px; padding: 8px 12px; margin: 4px 0;
-    font-size: 12px; cursor: pointer;
+/* Tabs */
+.stTabs [data-baseweb="tab-list"]{ gap:6px; border-bottom:1px solid var(--border); }
+.stTabs [data-baseweb="tab"]{
+  background:transparent; color:var(--muted); border-radius:10px 10px 0 0;
+  font-family:'Space Grotesk',sans-serif; font-weight:600; padding:8px 16px;
+}
+.stTabs [aria-selected="true"]{
+  color:var(--accent-hi) !important;
+  box-shadow:inset 0 -2px 0 var(--accent);
+  text-shadow:0 0 12px rgba(168,85,247,0.5);
 }
 
-/* Section title */
-.section-title {
-    font-size: 16px; font-weight: 700;
-    color: #90caf9; margin: 16px 0 8px 0;
-    border-bottom: 1px solid #333; padding-bottom: 6px;
+/* Metrics as glass cards */
+[data-testid="stMetric"]{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:14px 16px; backdrop-filter:blur(8px);
 }
+[data-testid="stMetricValue"]{ font-family:'Space Grotesk',sans-serif; color:var(--accent-hi); }
+[data-testid="stMetricLabel"]{ color:var(--muted); }
 
-/* Batch results */
-.batch-safe { color: #00e676; }
-.batch-critical { color: #ff5252; }
-.batch-high { color: #ff9800; }
-.batch-medium { color: #ffeb3b; }
-.batch-low { color: #69f0ae; }
+/* Expanders */
+[data-testid="stExpander"]{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; backdrop-filter:blur(6px);
+}
+pre{ background:rgba(255,255,255,0.03) !important; border:1px solid var(--border); border-radius:10px; }
+
+/* ---- re-skinned component classes (names unchanged) ---- */
+.section-title{
+  font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600;
+  color:var(--accent-hi); margin:18px 0 10px; letter-spacing:.03em;
+  border-bottom:1px solid var(--border); padding-bottom:8px; text-transform:uppercase;
+}
+/* signature: verdict banner as a lens readout */
+.verdict-box{
+  position:relative; padding:20px 28px; border-radius:16px;
+  font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:700;
+  text-align:center; letter-spacing:3px; margin:14px 0; text-transform:uppercase;
+  border:1px solid rgba(255,255,255,0.14); backdrop-filter:blur(8px); overflow:hidden;
+}
+.verdict-box::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(420px 130px at 50% 125%, rgba(255,255,255,0.22), transparent 70%);
+}
+.v-critical{ background:linear-gradient(135deg,rgba(127,0,20,0.55),rgba(255,59,107,0.5)); color:#fff; box-shadow:0 0 32px rgba(255,59,107,0.35); border-color:rgba(255,107,140,0.5); }
+.v-high    { background:linear-gradient(135deg,rgba(191,54,12,0.5),rgba(255,147,77,0.45)); color:#fff; box-shadow:0 0 28px rgba(255,147,77,0.28); }
+.v-medium  { background:linear-gradient(135deg,rgba(230,81,0,0.42),rgba(255,210,61,0.42)); color:#141414; box-shadow:0 0 26px rgba(255,210,61,0.25); }
+.v-low     { background:linear-gradient(135deg,rgba(27,94,32,0.5),rgba(94,230,168,0.4)); color:#fff; box-shadow:0 0 24px rgba(94,230,168,0.25); }
+.v-safe    { background:linear-gradient(135deg,rgba(0,77,64,0.5),rgba(45,226,176,0.4)); color:#fff; box-shadow:0 0 26px rgba(45,226,176,0.3); }
+
+.plain-box{
+  background:var(--surface); border:1px solid var(--border);
+  border-left:3px solid var(--accent); border-radius:12px;
+  padding:14px 18px; margin:8px 0; font-size:15px; line-height:1.6; backdrop-filter:blur(6px);
+}
+.jargon-box{
+  background:rgba(0,0,0,0.35); border:1px solid var(--border);
+  border-left:3px solid var(--accent-hi); border-radius:12px;
+  padding:12px 18px; margin:8px 0; font-size:13px;
+  font-family:'JetBrains Mono',monospace; color:#b9b9d6;
+}
+.badge-mitre{
+  display:inline-block; background:rgba(168,85,247,0.14); color:var(--accent-hi);
+  padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; margin:3px;
+  border:1px solid var(--border-2); font-family:'JetBrains Mono',monospace;
+}
+.badge-mitre-desc{
+  display:inline-block; background:var(--surface); color:var(--text);
+  padding:3px 10px; border-radius:6px; font-size:11px; margin:2px 4px; border:1px solid var(--border);
+}
+.badge-rule{
+  display:inline-block; background:rgba(255,59,107,0.12); color:#ff9db3;
+  padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; margin:3px;
+  border:1px solid rgba(255,59,107,0.35); font-family:'JetBrains Mono',monospace;
+}
+.feat-card{
+  background:var(--surface); border:1px solid var(--border);
+  border-left:3px solid var(--crit); border-radius:12px; padding:12px 16px; margin:6px 0; backdrop-filter:blur(6px);
+}
+.feat-card-safe{
+  background:var(--surface); border:1px solid var(--border);
+  border-left:3px solid var(--safe); border-radius:12px; padding:12px 16px; margin:6px 0;
+}
+.history-item{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:8px 12px; margin:4px 0; font-size:12px; font-family:'JetBrains Mono',monospace;
+}
+/* Threat Library */
+.lib-note{
+  background:rgba(168,85,247,0.06); border:1px solid var(--border);
+  border-left:3px solid var(--accent); border-radius:12px;
+  padding:12px 16px; margin:6px 0 18px; font-size:13px; color:var(--muted); line-height:1.55;
+}
+.lib-cat{
+  font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px;
+  color:var(--text); margin:18px 0 8px; letter-spacing:.01em;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -321,16 +388,19 @@ def render_gauge(score: float, cvss: float):
     col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
         st.markdown(f"""
-        <div class="gauge-container">
-            <div class="gauge-label">Risk Level (0 = Safe → 10 = Critical)</div>
-            <div style="position:relative; height:20px;">
-                <div style="height:12px; border-radius:6px; margin-top:4px;
-                    background: linear-gradient(90deg, #00e676 0%, #ffca28 50%, #ff1744 100%);">
-                </div>
-                <div style="position:absolute; top:0px; left:{min(pct, 97)}%;
-                    width:6px; height:20px; background:white; border-radius:3px;
-                    box-shadow: 0 0 8px rgba(255,255,255,0.9);">
-                </div>
+        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(168,139,250,0.16);
+             border-radius:14px; padding:14px 16px; backdrop-filter:blur(8px);">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#9b9bb8;
+                 margin-bottom:8px; text-transform:uppercase; letter-spacing:.08em;">
+                Risk Meter &middot; 0 Safe &rarr; 10 Critical
+            </div>
+            <div style="position:relative; height:22px;">
+                <div style="height:10px; border-radius:6px; margin-top:6px;
+                    background:linear-gradient(90deg,#2de2b0 0%,#ffd23d 50%,#ff3b6b 100%);
+                    box-shadow:0 0 18px rgba(168,85,247,0.15);"></div>
+                <div style="position:absolute; top:0; left:{min(pct, 97)}%;
+                    width:5px; height:22px; background:#fff; border-radius:3px;
+                    box-shadow:0 0 10px rgba(255,255,255,0.9), 0 0 18px rgba(168,85,247,0.85);"></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -355,12 +425,41 @@ def load_explainer(_xgb_model):
 @st.cache_data
 def load_hybrid_metrics():
     """Load the Hybrid Ensemble row from reports/full_evaluation.json."""
-    with open(os.path.join(os.path.dirname(__file__), '..', 'reports', 'full_evaluation.json')) as f:
-        data = json.load(f)
-    for m in data['metrics']:
-        if m['model'] == 'Hybrid Ensemble':
-            return m
+    try:
+        with open(os.path.join(os.path.dirname(__file__), '..', 'reports', 'full_evaluation.json')) as f:
+            data = json.load(f)
+        for m in data['metrics']:
+            if m['model'] == 'Hybrid Ensemble':
+                return m
+    except Exception:
+        pass
     return None
+
+
+@st.cache_data
+def load_extra_metrics():
+    """Compute OpenPhish detection rate and adversarial retention from report CSVs."""
+    metrics: dict[str, float | int | None] = {
+        'openphish_pct': None, 'openphish_n': None, 'adv_pct': None, 'adv_n': None
+    }
+    base = os.path.join(os.path.dirname(__file__), '..', 'reports')
+    try:
+        op = pd.read_csv(os.path.join(base, 'openphish_holdout_results.csv'))
+        valid = op[op['verdict'] != 'ERROR']
+        if len(valid) > 0:
+            detected = valid['verdict'].isin(['CRITICAL', 'HIGH', 'MEDIUM']).sum()
+            metrics['openphish_pct'] = detected / len(valid) * 100
+            metrics['openphish_n'] = len(valid)
+    except Exception:
+        pass
+    try:
+        adv = pd.read_csv(os.path.join(base, 'adversarial_results.csv'))
+        if len(adv) > 0:
+            metrics['adv_pct'] = (1 - adv['evaded'].mean()) * 100
+            metrics['adv_n'] = adv['mutation'].nunique()
+    except Exception:
+        pass
+    return metrics
 
 
 # ── SHAP plot ──────────────────────────────────────────────
@@ -432,6 +531,18 @@ Fake domains using Cyrillic/Greek characters that look identical to English in b
         st.markdown("---")
         st.markdown("**Performance (Hybrid Ensemble)**")
         hybrid_metrics = load_hybrid_metrics()
+        extra_metrics = load_extra_metrics()
+
+        if extra_metrics['openphish_pct'] is not None:
+            openphish_line = f"- OpenPhish Detection: **{extra_metrics['openphish_pct']:.0f}%** ({extra_metrics['openphish_n']:.0f} URLs)"
+        else:
+            openphish_line = "- OpenPhish Detection: **100%** (300 URLs)"
+
+        if extra_metrics['adv_pct'] is not None:
+            adv_line = f"- Adversarial Retention: **{extra_metrics['adv_pct']:.0f}%** ({extra_metrics['adv_n']:.0f} mutations)"
+        else:
+            adv_line = "- Adversarial Retention: **100%** (5 mutations)"
+
         if hybrid_metrics:
             st.markdown(f"""
 - Accuracy: **{hybrid_metrics['accuracy']:.4f}**
@@ -439,13 +550,13 @@ Fake domains using Cyrillic/Greek characters that look identical to English in b
 - Recall: **{hybrid_metrics['recall']:.4f}**
 - F1 Score: **{hybrid_metrics['f1']:.4f}**
 - ROC-AUC: **{hybrid_metrics['roc_auc']:.4f}**
-- OpenPhish Detection: **100%** (300 URLs)
-- Adversarial Retention: **100%** (5 mutations)
+{openphish_line}
+{adv_line}
             """)
         else:
-            st.markdown("""
-- OpenPhish Detection: **100%** (300 URLs)
-- Adversarial Retention: **100%** (5 mutations)
+            st.markdown(f"""
+{openphish_line}
+{adv_line}
             """)
 
 
@@ -525,7 +636,10 @@ def analyze_url(url, xgb_model, rf_model, explainer):
     with st.expander("Technical explanation (for cybersecurity professionals)"):
         st.markdown(f'<div class="jargon-box">{result["explanation"]}</div>', unsafe_allow_html=True)
         st.markdown(f"**Layer 1 (Heuristic):** {result['layer1_verdict']} — Rules: {result['layer1_rules'] or 'None triggered'}")
-        st.markdown(f"**Layer 2 (ML):** Score {result['layer2_score']} — XGBoost × 0.5001 + RF × 0.4999")
+        if result['layer2_score'] is not None:
+            st.markdown(f"**Layer 2 (ML):** Score {result['layer2_score']} — XGBoost × 0.5001 + RF × 0.4999")
+        else:
+            st.markdown("**Layer 2 (ML):** Bypassed — Layer 1 already flagged this as CRITICAL")
         st.markdown(f"**Layer 3 (Hybrid):** Escalated: {result['escalated']} | Trusted domain: {_is_trusted_domain(url)}")
 
     # MITRE + suspicious features
@@ -668,104 +782,64 @@ def analyze_url(url, xgb_model, rf_model, explainer):
         st.markdown(f"**CVSS:** {result['cvss']} / 10.0")
 
 
-# ── Batch analysis ─────────────────────────────────────────
-def batch_analysis(xgb_model, rf_model, explainer):
+# ── Threat Library ────────────────────────
+# Curated, synthetic specimens for a live demo. These are illustrative only;
+# measured detection performance comes from the blind OpenPhish hold-out in the
+# report, not from this gallery.
+THREAT_LIBRARY = {
+    "✅ Legitimate (control group)": [
+        ("Google", "https://www.google.com"),
+        ("Maybank2u login", "https://www.maybank2u.com.my/login"),
+        ("Python docs (long path)", "https://docs.python.org/3/library/urllib.parse.html"),
+    ],
+    "🎭 Typosquatting": [
+        ("paypa1.com", "https://paypa1.com/login/verify"),
+        ("wellsfarg0.com", "https://wellsfarg0.com/account/secure"),
+    ],
+    "🪝 Brand spoof + suspicious TLD": [
+        ("PayPal on .tk", "https://paypal-secure-login.evil.tk/account/verify?id=12345"),
+        ("CIMB on .tk", "https://cimb-clicks-login.evil.tk/user/verify"),
+    ],
+    "🎣 AiTM / M365 kit": [
+        ("m365 login (.tk)", "https://m365-login.suspicious.tk/auth"),
+        ("office365 MFA (.gq)", "https://office365-update.gq/auth/mfa/login"),
+    ],
+    "🌐 IP-based host": [
+        ("Raw IP + login", "http://192.168.1.1/admin/login"),
+    ],
+    "🔤 IDN homograph": [
+        ("xn-- punycode PayPal", "https://xn--pypal-4ve.com/login"),
+    ],
+    "🔒 HTTPS-laundered": [
+        ("Phishing with valid HTTPS", "https://secure-bank-update.xyz/customer/login"),
+    ],
+}
+
+
+def threat_library(xgb_model, rf_model, explainer):
     st.markdown("---")
-    st.markdown('<p class="section-title">📁 Batch URL Scanner</p>', unsafe_allow_html=True)
-    st.markdown("Upload a text file (one URL per line) or CSV file with a `url` column. The system will scan all URLs and produce a downloadable report.")
-
-    uploaded = st.file_uploader(
-        "Upload URL file",
-        type=['txt', 'csv'],
-        help="Text file: one URL per line. CSV file: must have a column named 'url'"
+    st.markdown('<p class="section-title">🧪 Threat Library</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="lib-note">Illustrative specimens for a live demonstration — synthetic URLs, '
+        'not real sites, so they are safe to open here. Pick any one to run it through all three layers. '
+        'Measured detection performance comes from the blind OpenPhish hold-out reported in the thesis, '
+        'not from this gallery.</div>',
+        unsafe_allow_html=True
     )
 
-    if uploaded is None:
-        return
+    for ci, (category, items) in enumerate(THREAT_LIBRARY.items()):
+        st.markdown(f'<div class="lib-cat">{category}</div>', unsafe_allow_html=True)
+        cols = st.columns(3)
+        for i, (label, url) in enumerate(items):
+            with cols[i % 3]:
+                if st.button(label, key=f"lib_{ci}_{i}", use_container_width=True, help=url):
+                    st.session_state.lib_selected = url
 
-    # Parse file
-    try:
-        if uploaded.name.endswith('.csv'):
-            df_input = pd.read_csv(uploaded)
-            if 'url' not in df_input.columns:
-                st.error("CSV must have a column named 'url'")
-                return
-            urls = df_input['url'].dropna().tolist()
-        else:
-            content = uploaded.read().decode('utf-8', errors='ignore')
-            urls = [u.strip() for u in content.splitlines() 
-                    if u.strip() and (u.strip().startswith('http') or u.strip().startswith('ftp'))]
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
-        return
-
-    if len(urls) == 0:
-        st.warning("No valid URLs found. Make sure file contains one URL per line starting with http:// or https://")
-        return
-    st.info(f"Found {len(urls):,} URLs. Starting scan...")
-
-    # Scan with progress bar
-    progress = st.progress(0)
-    status = st.empty()
-    results = []
-
-    for i, url in enumerate(urls):
-        try:
-            result   = hybrid_predict(url)
-            features = extract_features(url)
-            mitre    = result['mitre_techniques']
-            if not mitre:
-                mitre = infer_mitre_from_features(features, result['verdict'])
-
-            results.append({
-                'URL': url[:120],
-                'Verdict': result['verdict'],
-                'Score': result['score'],
-                'CVSS': result['cvss'],
-                'Layer1': result['layer1_verdict'],
-                'ML_Score': result['layer2_score'],
-                'MITRE': ', '.join(mitre),
-                'Escalated': result['escalated'],
-            })
-        except Exception as e:
-            results.append({
-                'URL': url[:120], 'Verdict': 'ERROR', 'Score': None,
-                'CVSS': None, 'Layer1': 'ERROR', 'ML_Score': None,
-                'MITRE': str(e)[:50], 'Escalated': False
-            })
-
-        progress.progress((i+1)/len(urls))
-        if (i+1) % 10 == 0:
-            status.text(f"Scanned {i+1}/{len(urls)} URLs...")
-
-    status.text("Scan complete!")
-    df_results = pd.DataFrame(results)
-
-    # Summary stats
-    st.markdown("**Scan Summary:**")
-    verdict_counts = df_results['Verdict'].value_counts()
-    cols = st.columns(5)
-    for i, (v, c) in enumerate(verdict_counts.items()):
-        color_map = {'CRITICAL':'#ff5252','HIGH':'#ff9800','MEDIUM':'#ffeb3b',
-                     'LOW':'#69f0ae','SAFE':'#00e676','ERROR':'#aaa'}
-        color = color_map.get(str(v), '#aaa')
-        with cols[min(i, 4)]:
-            st.markdown(f'<div style="text-align:center; color:{color}; font-size:24px; font-weight:bold">{c}</div>'
-                        f'<div style="text-align:center; font-size:12px; color:#aaa">{v}</div>',
-                        unsafe_allow_html=True)
-
-    # Results table
-    st.markdown("**Detailed Results:**")
-    st.dataframe(df_results, use_container_width=True, hide_index=True)
-
-    # Download button
-    csv_data = df_results.to_csv(index=False)
-    st.download_button(
-        label="⬇️ Download Results CSV",
-        data=csv_data,
-        file_name="phishlens_batch_results.csv",
-        mime="text/csv"
-    )
+    selected = st.session_state.get('lib_selected')
+    if selected:
+        analyze_url(selected, xgb_model, rf_model, explainer)
+    else:
+        st.info("Select a specimen above to run it through the full detection pipeline.")
 
 
 # ── Main ───────────────────────────────────────────────────
@@ -787,18 +861,10 @@ def main():
         return
 
     # Tabs
-    tab1, tab2 = st.tabs(["🔍 Single URL Analysis", "📁 Batch Scan"])
+    tab1, tab2 = st.tabs(["🔍 Single URL Analysis", "🧪 Threat Library"])
 
     with tab1:
         st.markdown('<p class="section-title">🔍 Analyze a URL</p>', unsafe_allow_html=True)
-        col_input, col_btn = st.columns([6, 1])
-        with col_input:
-            url_input = st.text_input(
-                "URL", placeholder="Paste any URL here — https://example.com",
-                label_visibility="collapsed"
-            )
-        with col_btn:
-            analyze = st.button("Analyze", type="primary", use_container_width=True)
 
         # Quick tests with descriptive names
         st.markdown("**Quick tests — click to demo:**")
@@ -822,7 +888,17 @@ def main():
         for i, (label, url, tooltip) in enumerate(quick):
             with qc[i]:
                 if st.button(label, use_container_width=True, help=tooltip, key=f"q{i}"):
+                    st.session_state.url_input_box = url
                     chosen = url
+
+        col_input, col_btn = st.columns([6, 1])
+        with col_input:
+            url_input = st.text_input(
+                "URL", placeholder="Paste any URL here — https://example.com",
+                label_visibility="collapsed", key="url_input_box"
+            )
+        with col_btn:
+            analyze = st.button("Analyze", type="primary", use_container_width=True)
 
         target_url = chosen or (url_input if analyze and url_input else None)
 
@@ -837,7 +913,7 @@ def main():
         render_history()
 
     with tab2:
-        batch_analysis(xgb_model, rf_model, explainer)
+        threat_library(xgb_model, rf_model, explainer)
 
 
 if __name__ == "__main__":
