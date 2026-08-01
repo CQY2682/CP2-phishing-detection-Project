@@ -80,6 +80,11 @@
   .why li{font-size:13.5px;line-height:1.5;padding:4px 0 4px 20px;position:relative;color:var(--ink)}
   .why li:before{content:"";position:absolute;left:2px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--ac)}
   .why .tech{font-size:11.5px;color:var(--dim);margin-top:9px;font-family:'JetBrains Mono',monospace;line-height:1.5}
+  .action{border-radius:12px;padding:12px 16px;margin-bottom:6px;font-size:13.5px;line-height:1.5;border:1px solid var(--bd)}
+  .action b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+  .action.bad{background:rgba(255,77,109,.08);border-color:rgba(255,77,109,.3)} .action.bad b{color:var(--crit)}
+  .action.warn{background:rgba(255,179,92,.08);border-color:rgba(255,179,92,.3)} .action.warn b{color:var(--high)}
+  .action.ok{background:rgba(45,226,176,.07);border-color:rgba(45,226,176,.25)} .action.ok b{color:var(--safe)}
   .badges{display:flex;flex-wrap:wrap;gap:7px}
   .badge{background:var(--acbg);color:var(--ac2);border:1px solid var(--bd2);border-radius:20px;padding:4px 13px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -207,6 +212,7 @@
         <div class="belowgrid">
           <div class="leftcol">
             <div class="why" id="why"></div>
+            <div id="action"></div>
             <div id="mitreWrap" style="display:none"><div class="sect">Attack techniques (MITRE ATT&amp;CK)</div><div class="badges" id="mitre"></div></div>
             <div class="sect">Three-layer breakdown</div>
             <div class="grid3">
@@ -437,6 +443,12 @@
     else { wh+='<ul><li>No phishing indicators were found. The address uses HTTPS and shows none of the common phishing patterns.</li></ul>'; }
     if(d.explanation) wh+='<div class="tech">'+d.explanation+'</div>';
     document.getElementById('why').innerHTML=wh;
+    // recommended action (on-screen)
+    let acls,atxt;
+    if(v==='CRITICAL'||v==='HIGH'){acls='bad';atxt='Do not enter any credentials or personal information, and do not click through. Verify the real website by typing its address directly, and report the link.';}
+    else if(v==='MEDIUM'){acls='warn';atxt='Treat with caution. Do not enter sensitive information unless you can confirm the site is genuine through an independent, trusted source.';}
+    else{acls='ok';atxt='No action required based on this analysis. Remain cautious with any request for passwords or payment details online.';}
+    document.getElementById('action').innerHTML='<div class="action '+acls+'"><b>Recommended action</b>'+atxt+'</div>';
 
     const mw=document.getElementById('mitreWrap'),mb=document.getElementById('mitre');
     if(d.mitre_techniques&&d.mitre_techniques.length){mw.style.display='block';mb.innerHTML=d.mitre_techniques.map(t=>'<span class="badge">'+t+'</span>').join('');}
@@ -470,10 +482,68 @@
       const b=document.getElementById('copyBtn'); const old=b.textContent; b.textContent='Copied!'; setTimeout(()=>b.textContent=old,1500);
     }).catch(()=>toast('Copy failed'));
   }
+  function buildReport(d){
+    const line='='.repeat(64);
+    const pad=(k,v)=>('  '+k).padEnd(26)+v;
+    const now=new Date();
+    const rs=reasons(d);
+    let reasonsTxt;
+    if(rs.length) reasonsTxt=rs.map(r=>'  - '+r).join('\n');
+    else if((d.score||0)>=0.4) reasonsTxt='  - No single classic red flag is present. This verdict comes from the overall\n    structure of the URL (such as a long path or an unusual number of dots and\n    slashes) that the model associates with phishing. See feature contributions.';
+    else reasonsTxt='  - No phishing indicators were found. The address uses HTTPS and shows none of\n    the common phishing patterns.';
+    let advice;
+    const v=d.verdict||'SAFE';
+    if(v==='CRITICAL'||v==='HIGH') advice='  Do NOT enter any credentials or personal information. Do not click through.\n  Verify the real website by typing its address directly, and report the link.';
+    else if(v==='MEDIUM') advice='  Treat with caution. Do not enter sensitive information unless you can confirm\n  the site is genuine through an independent, trusted source.';
+    else advice='  No action required based on this analysis. Remain cautious with any request\n  for passwords or payment details online.';
+
+    let l2 = (d.layer2_score==null) ? 'Bypassed (Layer 1 gave an instant verdict)' : ('Score '+d.layer2_score+'  (XGBoost x 0.5001 + Random Forest x 0.4999)');
+    let l1rules = (d.layer1_rules&&d.layer1_rules.length) ? d.layer1_rules.join(', ') : 'none';
+    let mitre = (d.mitre_techniques&&d.mitre_techniques.length) ? d.mitre_techniques.join(', ') : 'none';
+
+    let out='';
+    out+=line+'\n';
+    out+='  PhishLens  -  URL Threat Analysis Report\n';
+    out+='  Hybrid Phishing Detection System\n';
+    out+=line+'\n\n';
+    out+=pad('Generated:', now.toLocaleString())+'\n';
+    out+=pad('URL analysed:', d.url||'')+'\n\n';
+    out+='  VERDICT\n';
+    out+='  '+'-'.repeat(60)+'\n';
+    out+=pad('Verdict:', v)+'\n';
+    out+=pad('Severity (CVSS-inspired):', (d.cvss!=null?Number(d.cvss).toFixed(1):'-')+' / 10.0')+'\n';
+    out+=pad('Phishing score:', (d.score!=null?d.score:'-')+'  (0 = safe, 1 = phishing)')+'\n\n';
+    out+='  WHY THIS VERDICT (plain language)\n';
+    out+='  '+'-'.repeat(60)+'\n';
+    out+=reasonsTxt+'\n\n';
+    out+='  THREE-LAYER BREAKDOWN\n';
+    out+='  '+'-'.repeat(60)+'\n';
+    out+=pad('Layer 1 (rules):', (d.layer1_verdict||'CLEAN')+'  |  rules fired: '+l1rules)+'\n';
+    out+=pad('Layer 2 (ML):', l2)+'\n';
+    out+=pad('Layer 3 (hybrid):', (d.escalated?'Escalated (heuristic overrode a safe ML score)':'No escalation'))+'\n';
+    out+=pad('MITRE ATT&CK:', mitre)+'\n\n';
+    out+='  RECOMMENDED ACTION\n';
+    out+='  '+'-'.repeat(60)+'\n';
+    out+=advice+'\n\n';
+    if(d.features){
+      out+='  KEY FEATURE VALUES\n';
+      out+='  '+'-'.repeat(60)+'\n';
+      const keys=['has_https','is_ip','has_login_keyword','tld_risk_score','qty_slash','qty_dot','url_length','idn_homograph_flag','levenshtein_min'];
+      keys.forEach(k=>{ if(k in d.features) out+=pad(k+':', fmt(d.features[k]))+'\n'; });
+      out+='\n';
+    }
+    out+=line+'\n';
+    out+='  Note: severity is the phishing probability mapped to a CVSS-inspired 0-10\n';
+    out+='  scale. This is a decision-support tool, not a guarantee. PhishLens uses\n';
+    out+='  URL (lexical) features only and does not inspect page content.\n';
+    out+=line+'\n';
+    return out;
+  }
   function downloadResult(){ if(!lastResult)return;
-    const blob=new Blob([JSON.stringify(lastResult,null,2)],{type:'application/json'});
+    const txt=buildReport(lastResult);
+    const blob=new Blob([txt],{type:'text/plain'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download='phishlens_'+(lastResult.verdict||'result').toLowerCase()+'.json'; a.click();
+    a.download='PhishLens_report_'+(lastResult.verdict||'result').toLowerCase()+'.txt'; a.click();
     URL.revokeObjectURL(a.href); toast('Report downloaded');
   }
 
