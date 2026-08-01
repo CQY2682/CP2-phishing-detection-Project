@@ -1,35 +1,33 @@
-# Core ML
+# ── Core ML ───────────────────────────────────────────────
 pandas==2.2.3
 numpy==1.26.4
 scikit-learn==1.5.2
 xgboost==2.1.3
 
-# Explainability
+# ── Explainability ────────────────────────────────────────
 shap==0.46.0
 
-# URL parsing & feature extraction
+# ── URL parsing & feature extraction ──────────────────────
 tldextract==5.1.3
 python-Levenshtein==0.26.1
 
-# Dashboard
-streamlit==1.40.2
+# ── Dashboards ────────────────────────────────────────────
+flask==3.1.3          # web dashboard (dashboard/server.py)
+streamlit==1.40.2     # prototype fallback (dashboard/app.py)
 
-# Notebooks
-jupyter==1.1.1
-ipykernel==6.29.5
-
-# Model persistence
+# ── Model persistence ─────────────────────────────────────
 joblib==1.4.2
 
-# Visualization
+# ── Visualization ─────────────────────────────────────────
 matplotlib==3.9.3
 seaborn==0.13.2
 
-# Statistical tests (McNemar's test in evaluation.py)
+# ── Statistical tests (McNemar in evaluation.py) ──────────
 statsmodels==0.14.6
 
-# Memory profiling (tests/ram_bottleneck_test.py)
-psutil==7.2.2
+# ── Notebooks ─────────────────────────────────────────────
+jupyter==1.1.1
+ipykernel==6.29.5
 
-#flask
-flask==3.1.3
+# ── Profiling (tests/ram_bottleneck_test.py) ──────────────
+psutil==7.2.2
