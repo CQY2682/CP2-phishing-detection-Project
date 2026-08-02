@@ -112,8 +112,6 @@ A dark security-console UI (Flask backend + static front end). Features:
 
 The original Streamlit UI, kept as a lightweight backup with the same detection output.
 
-> **Screenshots** (add your own to a `docs/` folder):
-> `docs/analyze.png` · `docs/overview.png` · `docs/threat-library.png`
 
 ---
 
@@ -252,9 +250,7 @@ Selected by a **knowledge-driven method** (MITRE ATT&CK + literature), validated
 
 ---
 
-## License &amp; Acknowledgements
-
-Released under the **MIT License** — see `LICENSE`.
+## Acknowledgements & Data Sources
 
 Built as a Capstone Project 2 at **Sunway University**. Dataset courtesy of the **UCI Machine Learning Repository** (PhiUSIIL). Attack-technique mappings follow the **MITRE ATT&CK** framework. Blind hold-out data from the **OpenPhish Community Feed**.
 
